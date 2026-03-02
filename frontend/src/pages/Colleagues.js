@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import axios from "axios";
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import toast from "react-hot-toast";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Colleagues = () => {
-  const token = useSelector(state => state.auth.token);
+  const token = useSelector((state) => state.auth.token);
   const [colleagues, setColleagues] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterDept, setFilterDept] = useState('all');
+  const [filterDept, setFilterDept] = useState("all");
 
   useEffect(() => {
     fetchColleagues();
@@ -21,11 +21,17 @@ const Colleagues = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/api/workspace/members`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setColleagues(response.data.members || []);
     } catch (error) {
-      toast.error('Failed to load colleagues');
+      // Axios interceptor handles 401 errors (deleted account/company)
+      // Just show error to user
+      const errorMsg =
+        error.response?.data?.error || "Failed to load colleagues";
+      toast.error(errorMsg);
+      console.error("Error fetching colleagues:", error);
+      setColleagues([]);
     } finally {
       setLoading(false);
     }
@@ -33,33 +39,34 @@ const Colleagues = () => {
 
   const getRoleColor = (role) => {
     const colors = {
-      superadmin: 'bg-red-100 text-red-800',
-      admin: 'bg-orange-100 text-orange-800',
-      hr: 'bg-purple-100 text-purple-800',
-      sales: 'bg-blue-100 text-blue-800',
-      employee: 'bg-green-100 text-green-800'
+      superadmin: "bg-red-100 text-red-800",
+      admin: "bg-orange-100 text-orange-800",
+      hr: "bg-purple-100 text-purple-800",
+      sales: "bg-blue-100 text-blue-800",
+      employee: "bg-green-100 text-green-800",
     };
-    return colors[role] || 'bg-gray-100 text-gray-800';
+    return colors[role] || "bg-gray-100 text-gray-800";
   };
 
   const getDepartmentColor = (dept) => {
     const colors = {
-      sales: 'bg-blue-50 border-l-4 border-blue-500',
-      hr: 'bg-purple-50 border-l-4 border-purple-500',
-      support: 'bg-green-50 border-l-4 border-green-500',
-      marketing: 'bg-pink-50 border-l-4 border-pink-500',
-      management: 'bg-orange-50 border-l-4 border-orange-500',
-      tech: 'bg-indigo-50 border-l-4 border-indigo-500',
-      other: 'bg-gray-50 border-l-4 border-gray-500'
+      sales: "bg-blue-50 border-l-4 border-blue-500",
+      hr: "bg-purple-50 border-l-4 border-purple-500",
+      support: "bg-green-50 border-l-4 border-green-500",
+      marketing: "bg-pink-50 border-l-4 border-pink-500",
+      management: "bg-orange-50 border-l-4 border-orange-500",
+      tech: "bg-indigo-50 border-l-4 border-indigo-500",
+      other: "bg-gray-50 border-l-4 border-gray-500",
     };
-    return colors[dept] || 'bg-gray-50 border-l-4 border-gray-500';
+    return colors[dept] || "bg-gray-50 border-l-4 border-gray-500";
   };
 
-  const filteredColleagues = filterDept === 'all' 
-    ? colleagues 
-    : colleagues.filter(c => c.department === filterDept);
+  const filteredColleagues =
+    filterDept === "all"
+      ? colleagues
+      : colleagues.filter((c) => c.department === filterDept);
 
-  const departments = ['all', ...new Set(colleagues.map(c => c.department))];
+  const departments = ["all", ...new Set(colleagues.map((c) => c.department))];
 
   if (loading) {
     return (
@@ -82,37 +89,55 @@ const Colleagues = () => {
           {/* Filter */}
           <div className="mb-6">
             <div className="flex gap-2 flex-wrap">
-              {departments.map(dept => (
+              {departments.map((dept) => (
                 <button
                   key={dept}
                   onClick={() => setFilterDept(dept)}
                   className={`px-4 py-2 rounded-lg font-semibold transition ${
                     filterDept === dept
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-500'
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-700 border border-gray-300 hover:border-blue-500"
                   }`}
                 >
-                  {dept === 'all' ? 'All' : dept.toUpperCase()}
+                  {dept === "all" ? "All" : dept.toUpperCase()}
                 </button>
               ))}
             </div>
             <p className="text-gray-600 text-sm mt-3">
-              Showing {filteredColleagues.length} of {colleagues.length} colleagues
+              Showing {filteredColleagues.length} of {colleagues.length}{" "}
+              colleagues
             </p>
           </div>
 
           {/* Colleagues Grid */}
-          {filteredColleagues.length === 0 ? (
+          {colleagues.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">
-              <p className="text-gray-500 text-lg">No colleagues in this department</p>
+              <p className="text-gray-500 text-lg">
+                {loading
+                  ? "Loading colleagues..."
+                  : "No colleagues yet. You are the only member in your workspace."}
+              </p>
+            </div>
+          ) : filteredColleagues.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-12 text-center">
+              <p className="text-gray-500 text-lg">
+                No colleagues in this department
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredColleagues.map(colleague => (
-                <div key={colleague.id} className={`rounded-lg shadow p-6 ${getDepartmentColor(colleague.department)}`}>
+              {filteredColleagues.map((colleague) => (
+                <div
+                  key={colleague.id}
+                  className={`rounded-lg shadow p-6 ${getDepartmentColor(colleague.department)}`}
+                >
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">{colleague.name}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleColor(colleague.role)}`}>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      {colleague.name}
+                    </h3>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleColor(colleague.role)}`}
+                    >
                       {colleague.role.toUpperCase()}
                     </span>
                   </div>
@@ -122,7 +147,8 @@ const Colleagues = () => {
                       <strong>Email:</strong> {colleague.email}
                     </p>
                     <p className="text-sm text-gray-600">
-                      <strong>Department:</strong> <span className="capitalize">{colleague.department}</span>
+                      <strong>Department:</strong>{" "}
+                      <span className="capitalize">{colleague.department}</span>
                     </p>
                     {colleague.phone && (
                       <p className="text-sm text-gray-600">
@@ -132,12 +158,14 @@ const Colleagues = () => {
                   </div>
 
                   <div className="pt-4 border-t border-gray-300">
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                      colleague.active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-200 text-gray-700'
-                    }`}>
-                      {colleague.active ? '● Active' : '● Inactive'}
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                        colleague.active
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      {colleague.active ? "● Active" : "● Inactive"}
                     </span>
                   </div>
                 </div>

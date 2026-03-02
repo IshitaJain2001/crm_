@@ -9,7 +9,13 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const { page = 1, limit = 20, search } = req.query;
     
-    let query = { owner: req.user.id };
+    // Get companies where user is superAdmin or member
+    let query = {
+      $or: [
+        { superAdmin: req.user.id },
+        { members: req.user.id }
+      ]
+    };
 
     if (search) {
       query.name = { $regex: search, $options: 'i' };
@@ -18,7 +24,8 @@ router.get('/', authMiddleware, async (req, res) => {
     const companies = await Company.find(query)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .populate('superAdmin', 'name email');
 
     const total = await Company.countDocuments(query);
 
@@ -37,14 +44,18 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const company = await Company.findById(req.params.id)
-      .populate('contacts')
-      .populate('owner', 'name email');
+      .populate('superAdmin', 'name email')
+      .populate('members', 'name email');
 
     if (!company) {
       return res.status(404).json({ error: 'Company not found' });
     }
 
-    if (company.owner._id.toString() !== req.user.id) {
+    // Check if user is superAdmin or member
+    const isSuperAdmin = company.superAdmin._id.toString() === req.user.id;
+    const isMember = company.members.some(m => m._id.toString() === req.user.id);
+
+    if (!isSuperAdmin && !isMember) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
@@ -57,26 +68,40 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // Create company
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { name, website, industry, phone, email, companySize } = req.body;
+    const { name, website, industry, description } = req.body;
+
+    // Validate required fields
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'Company name is required' });
+    }
+
+    // Check if company name already exists
+    const existingCompany = await Company.findOne({ 
+      name: { $regex: `^${name}$`, $options: 'i' } 
+    });
+    
+    if (existingCompany) {
+      return res.status(400).json({ error: 'Company name already exists' });
+    }
 
     const company = new Company({
-      name,
-      website,
-      industry,
-      phone,
-      email,
-      companySize,
-      owner: req.user.id
+      name: name.trim(),
+      website: website || '',
+      industry: industry || 'generic',
+      description: description || '',
+      superAdmin: req.user.id,
+      members: [req.user.id]
     });
 
     await company.save();
-    await company.populate('owner');
+    await company.populate(['superAdmin', 'members']);
 
     res.status(201).json({
       message: 'Company created successfully',
       company
     });
   } catch (error) {
+    console.error('Company creation error:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -90,8 +115,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Company not found' });
     }
 
-    if (company.owner.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized' });
+    // Only superAdmin can update company
+    if (company.superAdmin.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Only superadmin can update company' });
     }
 
     company = await Company.findByIdAndUpdate(

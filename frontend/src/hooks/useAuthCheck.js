@@ -1,28 +1,58 @@
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { checkAuth } from '../store/authSlice';
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { logout } from "../store/authSlice";
 
 /**
- * Custom hook to check auth state on app load
- * Syncs localStorage with Redux
+ * Custom hook to check if user/company was deleted
+ * Handles logout and redirect if account/company is deleted
  */
 export const useAuthCheck = () => {
   const dispatch = useDispatch();
-  const { isAuthenticated, loading } = useSelector(state => state.auth);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check if token exists in localStorage
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+  const handleAuthError = (error) => {
+    const errorCode = error.response?.data?.code;
+    const errorMsg = error.response?.data?.error;
 
-    if (token && user) {
-      // Token exists, verify with Redux
-      dispatch(checkAuth());
-    } else {
-      // No token, ensure Redux is cleared
-      dispatch(checkAuth());
+    // Handle account deletion
+    if (errorCode === "ACCOUNT_DELETED") {
+      console.warn("Account was deleted");
+      toast.error(errorMsg);
+      handleLogout();
+      return true;
     }
-  }, [dispatch]);
 
-  return { isAuthenticated, loading };
+    // Handle company deletion
+    if (errorCode === "COMPANY_DELETED") {
+      console.warn("Company was deleted");
+      toast.error(errorMsg);
+      handleLogout();
+      return true;
+    }
+
+    // Handle general auth errors
+    if (error.response?.status === 401) {
+      if (
+        errorMsg?.includes("token") ||
+        errorMsg?.includes("deleted") ||
+        errorMsg?.includes("workspace")
+      ) {
+        handleLogout();
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const handleLogout = () => {
+    // Clear Redux state
+    dispatch(logout());
+
+    // Redirect to login
+    navigate("/login", { replace: true });
+  };
+
+  return { handleAuthError, handleLogout };
 };

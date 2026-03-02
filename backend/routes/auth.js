@@ -11,10 +11,22 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, department } = req.body;
 
-    // Check if user already exists
-    let user = await User.findOne({ email });
+    // Validate inputs
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Email, password, and name are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Check if user already exists (case-insensitive)
+    let user = await User.findOne({ email: email.toLowerCase() });
     if (user) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({
+        error: `Email "${email}" is already registered. Please use a different email or login instead.`,
+        code: 'EMAIL_ALREADY_REGISTERED'
+      });
     }
 
     // Check if this is first user

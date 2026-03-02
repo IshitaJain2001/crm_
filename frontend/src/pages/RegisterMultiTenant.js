@@ -1,22 +1,40 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import axios from 'axios';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const RegisterMultiTenant = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: Company & Password
+  const [step, setStep] = useState(1); // 1: Email, 2: OTP, 2.5: Website Choice, 3: Company & Password
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [verificationToken, setVerificationToken] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [industries, setIndustries] = useState([]);
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [verificationToken, setVerificationToken] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [websiteChoice, setWebsiteChoice] = useState(""); // "existing" or "builder"
+  const [existingWebsite, setExistingWebsite] = useState(""); // URL for existing website
+
+  // Load industries on mount
+  React.useEffect(() => {
+    fetchIndustries();
+  }, []);
+
+  const fetchIndustries = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/industries`);
+      setIndustries(response.data);
+    } catch (error) {
+      console.log("Failed to load industries");
+    }
+  };
 
   // ============================================================
   // STEP 1: Send OTP
@@ -27,17 +45,19 @@ const RegisterMultiTenant = () => {
 
     try {
       if (!email) {
-        toast.error('Please enter your email');
+        toast.error("Please enter your email");
         return;
       }
 
-      const response = await axios.post(`${API_URL}/api/auth/send-otp`, { email });
+      const response = await axios.post(`${API_URL}/api/auth/send-otp`, {
+        email,
+      });
 
       setVerificationToken(response.data.verificationToken);
       setStep(2);
-      toast.success('OTP sent to your email');
+      toast.success("OTP sent to your email");
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to send OTP');
+      toast.error(error.response?.data?.error || "Failed to send OTP");
     } finally {
       setLoading(false);
     }
@@ -52,20 +72,20 @@ const RegisterMultiTenant = () => {
 
     try {
       if (!otp || otp.length !== 6) {
-        toast.error('Please enter a valid 6-digit OTP');
+        toast.error("Please enter a valid 6-digit OTP");
         return;
       }
 
       const response = await axios.post(`${API_URL}/api/auth/verify-otp`, {
         email,
-        otp
+        otp,
       });
 
       setVerificationToken(response.data.verificationToken);
-      setStep(3);
-      toast.success('Email verified successfully');
+      setStep(2.5);
+      toast.success("Email verified successfully");
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Invalid OTP');
+      toast.error(error.response?.data?.error || "Invalid OTP");
     } finally {
       setLoading(false);
     }
@@ -80,42 +100,66 @@ const RegisterMultiTenant = () => {
 
     try {
       if (!fullName || !companyName || !displayName || !password) {
-        toast.error('Please fill in all fields');
+        toast.error("Please fill in all fields");
         return;
       }
 
       if (password !== confirmPassword) {
-        toast.error('Passwords do not match');
+        toast.error("Passwords do not match");
         return;
       }
 
       if (password.length < 6) {
-        toast.error('Password must be at least 6 characters');
+        toast.error("Password must be at least 6 characters");
         return;
       }
 
-      const response = await axios.post(`${API_URL}/api/auth/register-company`, {
-        email,
-        password,
-        name: fullName,
-        companyName,
-        displayName,
-        verificationToken
-      });
+      if (!industry) {
+        toast.error("Please select your business type");
+        return;
+      }
+
+      const response = await axios.post(
+        `${API_URL}/api/auth/register-company`,
+        {
+          email,
+          password,
+          name: fullName,
+          companyName,
+          displayName,
+          industry,
+          verificationToken,
+        },
+      );
 
       // Save token to localStorage
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      localStorage.setItem('company', JSON.stringify(response.data.company));
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      localStorage.setItem("company", JSON.stringify(response.data.company));
 
       toast.success(response.data.message);
-      
+
       // Force page reload to sync auth state
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = "/";
       }, 500);
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Registration failed');
+      const errorCode = error.response?.data?.code;
+      const errorMsg = error.response?.data?.error;
+
+      // Handle specific error codes
+      if (errorCode === "EMAIL_ALREADY_REGISTERED") {
+        toast.error(errorMsg || "This email is already registered. Please login or use a different email.");
+        setStep(1);
+        setEmail("");
+        setOtp("");
+        setVerificationToken("");
+      } else if (errorCode === "COMPANY_NAME_TAKEN") {
+        toast.error(errorMsg || "Company name is already taken. Please choose a different name.");
+        setCompanyName("");
+      } else {
+        toast.error(errorMsg || "Registration failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -124,16 +168,21 @@ const RegisterMultiTenant = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-600 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        
         {/* STEP 1: Email & OTP */}
         {step === 1 && (
           <>
-            <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">Create Account</h1>
-            <p className="text-center text-gray-600 mb-8">Step 1 of 3: Email Verification</p>
+            <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
+              Create Account
+            </h1>
+            <p className="text-center text-gray-600 mb-8">
+              Step 1 of 3: Email Verification
+            </p>
 
             <form onSubmit={handleSendOTP} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
                 <input
                   type="email"
                   value={email}
@@ -149,7 +198,7 @@ const RegisterMultiTenant = () => {
                 disabled={loading || step > 1}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
               >
-                {loading ? 'Sending OTP...' : 'Send OTP'}
+                {loading ? "Sending OTP..." : "Send OTP"}
               </button>
             </form>
           </>
@@ -158,12 +207,18 @@ const RegisterMultiTenant = () => {
         {/* STEP 2: OTP Verification */}
         {step === 2 && (
           <>
-            <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">Verify Email</h1>
-            <p className="text-center text-gray-600 mb-8">Step 2 of 3: Enter OTP sent to {email}</p>
+            <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
+              Verify Email
+            </h1>
+            <p className="text-center text-gray-600 mb-8">
+              Step 2 of 3: Enter OTP sent to {email}
+            </p>
 
             <form onSubmit={handleVerifyOTP} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">6-Digit OTP</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  6-Digit OTP
+                </label>
                 <input
                   type="text"
                   value={otp}
@@ -172,7 +227,9 @@ const RegisterMultiTenant = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-center text-2xl tracking-widest"
                   placeholder="000000"
                 />
-                <p className="text-xs text-gray-500 mt-2">Check your email for the OTP (expires in 10 minutes)</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Check your email for the OTP (expires in 10 minutes)
+                </p>
               </div>
 
               <button
@@ -180,7 +237,7 @@ const RegisterMultiTenant = () => {
                 disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
               >
-                {loading ? 'Verifying...' : 'Verify OTP'}
+                {loading ? "Verifying..." : "Verify OTP"}
               </button>
 
               <button
@@ -194,15 +251,145 @@ const RegisterMultiTenant = () => {
           </>
         )}
 
+        {/* STEP 2.5: Website Choice */}
+        {step === 2.5 && (
+          <>
+            <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
+              Choose Your Website
+            </h1>
+            <p className="text-center text-gray-600 mb-8">
+              Do you have an existing website or want to build one on our platform?
+            </p>
+
+            <div className="space-y-4">
+              {/* Option 1: Existing Website */}
+              <div
+                onClick={() => setWebsiteChoice("existing")}
+                className={`border-2 rounded-lg p-6 cursor-pointer transition ${
+                  websiteChoice === "existing"
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-300 bg-white hover:border-gray-400"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="website"
+                  value="existing"
+                  checked={websiteChoice === "existing"}
+                  onChange={(e) => setWebsiteChoice(e.target.value)}
+                  className="mr-3"
+                />
+                <label className="font-semibold text-gray-800 cursor-pointer">
+                  📱 I have an existing website
+                </label>
+                <p className="text-sm text-gray-600 mt-2">
+                  Enter your website URL
+                </p>
+              </div>
+
+              {websiteChoice === "existing" && (
+                <input
+                  type="url"
+                  placeholder="https://www.example.com"
+                  value={existingWebsite}
+                  onChange={(e) => setExistingWebsite(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+              )}
+
+              {/* Option 2: Build with Drag & Drop */}
+              <div
+                onClick={() => setWebsiteChoice("builder")}
+                className={`border-2 rounded-lg p-6 cursor-pointer transition ${
+                  websiteChoice === "builder"
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-300 bg-white hover:border-gray-400"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="website"
+                  value="builder"
+                  checked={websiteChoice === "builder"}
+                  onChange={(e) => setWebsiteChoice(e.target.value)}
+                  className="mr-3"
+                />
+                <label className="font-semibold text-gray-800 cursor-pointer">
+                  🎨 Build with our Website Builder
+                </label>
+                <p className="text-sm text-gray-600 mt-2">
+                  Create a professional website with drag-and-drop (No coding!)
+                </p>
+              </div>
+
+              {/* Continue Button */}
+              <button
+                onClick={() => {
+                  if (!websiteChoice) {
+                    toast.error("Please choose an option");
+                    return;
+                  }
+                  if (websiteChoice === "existing" && !existingWebsite) {
+                    toast.error("Please enter your website URL");
+                    return;
+                  }
+                  setStep(3);
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
+              >
+                Continue →
+              </button>
+            </div>
+          </>
+        )}
+
         {/* STEP 3: Company & Password */}
         {step === 3 && (
           <>
-            <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">Create Company</h1>
-            <p className="text-center text-gray-600 mb-8">Step 3 of 3: Setup Your Workspace</p>
+            <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
+              Create Company
+            </h1>
+            <p className="text-center text-gray-600 mb-8">
+              Step 3 of 3: Setup Your Workspace
+            </p>
 
             <form onSubmit={handleRegisterCompany} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Type
+                </label>
+                <select
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                >
+                  <option value="">Select your business type</option>
+                  {industries.map((ind) => {
+                    const industryId = typeof ind === "string" ? ind : ind.id;
+                    const industryName =
+                      typeof ind === "string"
+                        ? ind.charAt(0).toUpperCase() + ind.slice(1)
+                        : ind.name ||
+                          industryId.charAt(0).toUpperCase() +
+                            industryId.slice(1);
+                    return (
+                      <option key={industryId} value={industryId}>
+                        {industryName}
+                      </option>
+                    );
+                  })}
+                </select>
+                {!industry && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Please select a business type
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   value={fullName}
@@ -213,19 +400,29 @@ const RegisterMultiTenant = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Company Slug</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Company Slug
+                </label>
                 <input
                   type="text"
                   value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                  onChange={(e) =>
+                    setCompanyName(
+                      e.target.value.toLowerCase().replace(/\s+/g, "-"),
+                    )
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   placeholder="your-company"
                 />
-                <p className="text-xs text-gray-500 mt-1">Use lowercase and hyphens (e.g., ishita-crm)</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Use lowercase and hyphens (e.g., ishita-crm)
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Company Display Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Company Display Name
+                </label>
                 <input
                   type="text"
                   value={displayName}
@@ -236,7 +433,9 @@ const RegisterMultiTenant = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
                 <input
                   type="password"
                   value={password}
@@ -247,7 +446,9 @@ const RegisterMultiTenant = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password
+                </label>
                 <input
                   type="password"
                   value={confirmPassword}
@@ -262,7 +463,7 @@ const RegisterMultiTenant = () => {
                 disabled={loading}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
               >
-                {loading ? 'Creating Company...' : 'Create Company & Account'}
+                {loading ? "Creating Company..." : "Create Company & Account"}
               </button>
 
               <button
@@ -277,8 +478,11 @@ const RegisterMultiTenant = () => {
         )}
 
         <p className="text-center text-gray-600 mt-6">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline font-semibold">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-blue-600 hover:underline font-semibold"
+          >
             Login here
           </Link>
         </p>

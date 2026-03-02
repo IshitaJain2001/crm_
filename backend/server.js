@@ -45,6 +45,17 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/emails', require('./routes/emails'));
 app.use('/api/meetings', require('./routes/meetings'));
+app.use('/api/forms', require('./routes/forms'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/chatbots', require('./routes/chatbots'));
+app.use('/api/conversations', require('./routes/conversations'));
+app.use('/api/messages', require('./routes/messages'));
+app.use('/api/knowledge-base', require('./routes/knowledgeBase'));
+app.use('/api/industries', require('./routes/industries'));
+app.use('/api/feedback', require('./routes/feedback'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/email-recommendations', require('./routes/emailRecommendations'));
+app.use('/api/website-builder', require('./routes/websiteBuilder'));
 
 // Health Check
 app.get('/api/health', (req, res) => {

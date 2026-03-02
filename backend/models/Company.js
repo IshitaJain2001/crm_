@@ -13,7 +13,6 @@ const companySchema = new mongoose.Schema({
     // e.g., "Ishita's CRM", "Acme Corp CRM"
   },
   website: String,
-  industry: String,
   description: String,
   logo: String,
   
@@ -36,10 +35,16 @@ const companySchema = new mongoose.Schema({
     enum: ['free', 'starter', 'professional', 'enterprise'],
     default: 'free'
   },
+
+  industry: {
+    type: String,
+    enum: ['edtech', 'consulting', 'realEstate', 'insurance', 'saas', 'ecommerce', 'manufacturing', 'healthcare', 'finance', 'generic'],
+    default: 'generic'
+  },
   
   maxUsers: {
     type: Number,
-    default: 5
+    default: 999999 // Unlimited for free plan
   },
   
   features: {

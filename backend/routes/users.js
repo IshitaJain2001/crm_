@@ -80,11 +80,23 @@ router.patch('/:id/role', authMiddleware, adminMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
+    // SECURITY: Prevent users from changing their own role
+    if (req.params.id === req.user.id) {
+      return res.status(403).json({
+        error: 'Cannot change your own role. Contact an administrator for role changes.',
+        code: 'SELF_ROLE_CHANGE_DENIED'
+      });
+    }
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { role },
       { new: true }
     ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     res.json({
       message: 'User role updated successfully',

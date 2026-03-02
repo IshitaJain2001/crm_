@@ -63,35 +63,64 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // Create deal
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { dealName, company, contact, amount, dealStage, expectedCloseDate } = req.body;
+    const { dealName, company, amount, dealStage, expectedCloseDate } = req.body;
+
+    // Validate required fields
+    if (!dealName) {
+      return res.status(400).json({ error: 'Deal name is required' });
+    }
+
+    if (!company) {
+      return res.status(400).json({ error: 'Company is required' });
+    }
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid deal amount is required' });
+    }
+
+    if (!expectedCloseDate) {
+      return res.status(400).json({ error: 'Expected close date is required' });
+    }
+
+    // Validate date format
+    const closeDate = new Date(expectedCloseDate);
+    if (isNaN(closeDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    // Check if company exists
+    const companyExists = await Company.findById(company);
+    if (!companyExists) {
+      return res.status(400).json({ error: 'Company not found' });
+    }
 
     const deal = new Deal({
-      dealName,
+      dealName: dealName.trim(),
       company,
-      contact,
-      amount,
+      amount: parseFloat(amount),
       dealStage: dealStage || 'initial_contact',
-      expectedCloseDate,
-      owner: req.user.id
+      expectedCloseDate: closeDate,
+      owner: req.user.id,
+      dealStatus: 'open'
     });
 
     await deal.save();
-    await deal.populate(['company', 'contact', 'owner']);
+    await deal.populate(['company', 'owner']);
 
     // Send notification email
     try {
       const owner = await User.findById(req.user.id);
-      const company = await Company.findById(deal.company);
-      await sendDealCreatedEmail(deal, owner, company);
+      await sendDealCreatedEmail(deal, owner, companyExists);
     } catch (emailError) {
       console.error('Deal created but notification email failed:', emailError);
     }
 
     res.status(201).json({
-      message: 'Deal created successfully. Notification email sent!',
+      message: 'Deal created successfully!',
       deal
     });
   } catch (error) {
+    console.error('Deal creation error:', error);
     res.status(400).json({ error: error.message });
   }
 });

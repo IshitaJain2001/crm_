@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
-import { FiHome, FiUsers, FiBriefcase, FiTrendingUp, FiActivity, FiCheckSquare, FiLogOut, FiSettings, FiUserCheck } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiTrendingUp, FiActivity, FiCheckSquare, FiLogOut, FiSettings, FiUserCheck, FiFileText, FiMessageSquare, FiStar, FiBarChart2, FiMonitor } from 'react-icons/fi';
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -19,7 +19,12 @@ const Sidebar = () => {
     { path: '/tasks', label: 'Tasks', icon: FiCheckSquare },
     { path: '/emails', label: 'Email Tracking', icon: FiActivity },
     { path: '/meetings', label: 'Meetings', icon: FiCheckSquare },
+    { path: '/forms', label: 'Forms & Leads', icon: FiFileText },
+    { path: '/chatbots', label: 'Live Chatbots', icon: FiMessageSquare },
     { path: '/employees', label: 'My Employees', icon: FiUserCheck },
+    { path: '/analytics', label: 'Analytics', icon: FiBarChart2 },
+    { path: '/website-builder', label: 'Website Builder', icon: FiMonitor },
+    { path: '/feedback', label: 'Feedback', icon: FiStar },
     { path: '/settings', label: 'Settings', icon: FiSettings }
   ];
 
@@ -28,7 +33,8 @@ const Sidebar = () => {
     { path: '/', label: 'Dashboard', icon: FiHome },
     { path: '/profile', label: 'My Profile', icon: FiUsers },
     { path: '/colleagues', label: 'My Colleagues', icon: FiUserCheck },
-    { path: '/tasks', label: 'My Tasks', icon: FiCheckSquare }
+    { path: '/tasks', label: 'My Tasks', icon: FiCheckSquare },
+    { path: '/chatbots', label: 'Chat with Admin', icon: FiMessageSquare }
   ];
 
   // Build menu based on role
@@ -37,7 +43,7 @@ const Sidebar = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="w-64 bg-gradient-to-b from-blue-900 to-blue-800 h-screen text-white flex flex-col shadow-lg">
+    <div className="w-64 bg-gradient-to-b from-blue-900 to-blue-800 min-h-screen text-white flex flex-col shadow-lg">
       {/* Header */}
       <div className="p-6 border-b border-blue-700">
         <h1 className="text-2xl font-bold">CRM</h1>
@@ -45,7 +51,7 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -69,7 +75,7 @@ const Sidebar = () => {
       </nav>
 
       {/* User Info */}
-      <div className="p-4 border-t border-blue-700">
+      <div className="p-4 border-t border-blue-700 bg-blue-950">
         <div className="mb-4 pb-4 border-b border-blue-700">
           <p className="text-sm font-semibold">{user?.name}</p>
           <p className="text-xs text-blue-200">{user?.email}</p>

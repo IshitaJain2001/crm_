@@ -3,12 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchDeals, createDeal, deleteDeal } from '../store/dealsSlice';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import CompanySelector from '../components/CompanySelector';
 import { FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const Deals = () => {
   const dispatch = useDispatch();
   const { deals, loading } = useSelector(state => state.deals);
+  const token = useSelector(state => state.auth.token);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     dealName: '',
@@ -101,13 +103,11 @@ const Deals = () => {
                   onChange={handleChange}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 />
-                <input
-                  type="text"
-                  name="company"
-                  placeholder="Company ID *"
-                  value={formData.company}
-                  onChange={handleChange}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                <CompanySelector
+                  token={token}
+                  selectedCompanyId={formData.company}
+                  onChange={(id) => setFormData(prev => ({ ...prev, company: id }))}
+                  label="Company *"
                 />
                 <input
                   type="number"

@@ -4,6 +4,7 @@ const User = require("../models/User");
 const Company = require("../models/Company");
 const Invitation = require("../models/Invitation");
 const EmailVerification = require("../models/EmailVerification");
+const Website = require("../models/Website");
 const {
   sendOTPEmail,
   verifyOTP,
@@ -79,8 +80,20 @@ router.post("/register-company", async (req, res) => {
       name,
       companyName,
       displayName,
+      industry,
       verificationToken,
     } = req.body;
+
+    console.log("=== REGISTRATION REQUEST ===");
+    console.log("Email:", email);
+    console.log("Name:", name);
+    console.log("Company:", companyName);
+    console.log("Industry:", industry);
+    console.log(
+      "Verification Token:",
+      verificationToken ? "✓ Present" : "✗ Missing",
+    );
+    console.log("============================");
 
     // Validate inputs
     if (!email || !password || !name || !companyName || !verificationToken) {
@@ -106,22 +119,44 @@ router.post("/register-company", async (req, res) => {
         .json({ error: "Email not verified. Please verify OTP first." });
     }
 
-    // Check if company name already exists
-    const existingCompany = await Company.findOne({ name: companyName });
-    if (existingCompany) {
-      return res.status(400).json({ error: "Company name already taken" });
+    // Check if email already registered (case-insensitive)
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        error: `Email "${email}" is already registered. Please use a different email or login instead.`,
+        code: "EMAIL_ALREADY_REGISTERED",
+      });
     }
 
-    // Check if email already registered
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: "Email already registered" });
+    // Check if company name already exists (case-insensitive)
+    const existingCompany = await Company.findOne({
+      name: { $regex: `^${companyName}$`, $options: "i" },
+    });
+    if (existingCompany) {
+      return res.status(400).json({
+        error: `Company name "${companyName}" is already taken. Please choose a different name.`,
+        code: "COMPANY_NAME_TAKEN",
+      });
+    }
+
+    // Validate all required fields
+    if (!email || !password || !name || !companyName) {
+      return res.status(400).json({
+        error: "Email, password, name, and company name are required",
+      });
+    }
+
+    if (!industry) {
+      return res.status(400).json({
+        error: "Please select your business type/industry",
+      });
     }
 
     // CREATE COMPANY
     const company = new Company({
       name: companyName,
       displayName: displayName || companyName,
+      industry: industry || "generic",
     });
 
     // CREATE USER (Super Admin for this company)
@@ -139,9 +174,77 @@ router.post("/register-company", async (req, res) => {
     company.superAdmin = user._id;
     company.members.push(user._id);
 
-    // Save both
+    // Save company first
+    console.log("Saving company...");
     await company.save();
+    console.log("✓✓✓ COMPANY CREATED SUCCESSFULLY ✓✓✓");
+    console.log("Company ID:", company._id.toString());
+    console.log("Company Name:", company.name);
+    console.log("Company Industry:", company.industry);
+
+    // Save user
+    console.log("Saving user...");
     await user.save();
+    console.log("✓✓✓ USER CREATED SUCCESSFULLY ✓✓✓");
+    console.log("User ID:", user._id.toString());
+    console.log("User Email:", user.email);
+    console.log("User Company Reference:", user.company.toString());
+
+    // Verify both were created
+    if (!company._id || !user._id) {
+      console.error("❌ CRITICAL: IDs not generated", {
+        companyId: company._id,
+        userId: user._id,
+      });
+      throw new Error("Failed to create company or user - IDs not generated");
+    }
+
+    // CREATE DEFAULT WEBSITE
+    console.log("Creating default website...");
+    const defaultWebsite = new Website({
+      company: company._id,
+      title: company.name,
+      description: `Welcome to ${company.name}`,
+      sections: [
+        {
+          id: `hero-${Date.now()}`,
+          type: "hero",
+          title: `Welcome to ${company.name}`,
+          content: "Your company description goes here",
+          order: 1,
+          backgroundColor: "#3b82f6",
+          textColor: "#ffffff",
+          items: [],
+        },
+      ],
+      colors: {
+        primary: "#3b82f6",
+        secondary: "#10b981",
+        accent: "#f59e0b",
+      },
+      isPublished: false,
+    });
+
+    await defaultWebsite.save();
+    console.log("✓✓✓ DEFAULT WEBSITE CREATED ✓✓✓");
+    console.log("Website ID:", defaultWebsite._id.toString());
+
+    if (!user.company) {
+      console.error("❌ CRITICAL: User company reference not set");
+      throw new Error("User company reference not set");
+    }
+
+    // Final verification - check if company exists in DB
+    const verifyCompany = await Company.findById(company._id);
+    if (!verifyCompany) {
+      console.error("❌ CRITICAL: Company not found in database after save!", {
+        companyId: company._id.toString(),
+      });
+      throw new Error(
+        "Company not found in database after save - database error",
+      );
+    }
+    console.log("✓ Company verified in database");
 
     // Create JWT token
     const token = jwt.sign(
@@ -173,6 +276,7 @@ router.post("/register-company", async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        company: company._id,
       },
       company: {
         id: company._id,
@@ -248,6 +352,7 @@ router.post("/login", async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        company: user.company._id,
       },
       company: {
         id: user.company._id,
@@ -358,6 +463,7 @@ router.post("/accept-invitation/:token", async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        company: invitation.company._id,
       },
       company: {
         id: invitation.company._id,
@@ -380,6 +486,40 @@ router.get("/me", authMiddleware, async (req, res) => {
       .select("-password");
 
     res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// Validate token - lightweight check for user/company deletion
+// ============================================================
+router.get("/validate", authMiddleware, async (req, res) => {
+  try {
+    // Check if user still exists
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(401).json({
+        error:
+          "Your account has been deleted. Please contact support or register again.",
+        code: "ACCOUNT_DELETED",
+      });
+    }
+
+    // Check if company still exists (if user belongs to a company)
+    if (req.user.company) {
+      const company = await Company.findById(req.user.company);
+      if (!company) {
+        return res.status(401).json({
+          error:
+            "Your workspace has been deleted. Please create a new company or register again.",
+          code: "COMPANY_DELETED",
+        });
+      }
+    }
+
+    // User and company are valid
+    res.json({ valid: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
