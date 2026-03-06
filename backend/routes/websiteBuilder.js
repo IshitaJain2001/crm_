@@ -266,6 +266,48 @@ router.put("/colors", authMiddleware, superAdminOnly, async (req, res) => {
 });
 
 // ============================================================
+// Update Full Website (Auto-save)
+// ============================================================
+router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
+  try {
+    const { title, description, sections, colors, isPublished } = req.body;
+
+    const company = await Company.findOne({ superAdmin: req.user.id });
+
+    if (!company) {
+      return res
+        .status(404)
+        .json({ error: "No company found under your admin" });
+    }
+
+    let website = await Website.findOne({ company: company._id });
+
+    if (!website) {
+      // Create new website if doesn't exist
+      website = new Website({
+        company: company._id,
+      });
+    }
+
+    // Update website fields
+    if (title) website.title = title;
+    if (description) website.description = description;
+    if (sections) website.sections = sections;
+    if (colors) website.colors = colors;
+    if (isPublished !== undefined) website.isPublished = isPublished;
+
+    await website.save();
+
+    res.json({
+      message: "Website updated successfully",
+      website,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
 // Publish Website
 // ============================================================
 router.post("/publish", authMiddleware, superAdminOnly, async (req, res) => {

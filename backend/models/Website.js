@@ -20,19 +20,20 @@ const websiteSchema = new mongoose.Schema(
     sections: [
       {
         id: String, // unique section id
-        type: {
-          type: String,
-          enum: ["hero", "services", "about", "contact", "features", "testimonials"],
-        },
+        type: String, // Allow any section type
         title: String,
         content: String,
+        logo: String, // For navbar
         items: [
           {
             id: String,
+            type: String,
             title: String,
+            content: String,
             description: String,
             icon: String,
             image: String,
+            properties: mongoose.Schema.Types.Mixed, // Allow any properties
           },
         ],
         backgroundColor: {
@@ -44,6 +45,7 @@ const websiteSchema = new mongoose.Schema(
           default: "#000000",
         },
         order: Number,
+        properties: mongoose.Schema.Types.Mixed, // Allow any properties
       },
     ],
     colors: {
