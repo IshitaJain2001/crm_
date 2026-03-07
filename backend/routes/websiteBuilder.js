@@ -270,7 +270,21 @@ router.put("/colors", authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
   try {
-    const { title, description, sections, colors, isPublished } = req.body;
+    let { title, description, sections, colors, isPublished } = req.body;
+
+    // Parse sections if it's a string
+    if (typeof sections === "string") {
+      try {
+        sections = JSON.parse(sections);
+      } catch (e) {
+        return res.status(400).json({ error: "Invalid sections format" });
+      }
+    }
+
+    // Validate sections is an array
+    if (!Array.isArray(sections)) {
+      sections = [];
+    }
 
     const company = await Company.findOne({ superAdmin: req.user.id });
 
@@ -286,13 +300,17 @@ router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
       // Create new website if doesn't exist
       website = new Website({
         company: company._id,
+        title: title || "Untitled Website",
       });
     }
 
     // Update website fields
     if (title) website.title = title;
     if (description) website.description = description;
-    if (sections) website.sections = sections;
+    
+    // Ensure sections is properly formatted
+    website.sections = Array.isArray(sections) ? sections : [];
+    
     if (colors) website.colors = colors;
     if (isPublished !== undefined) website.isPublished = isPublished;
 
@@ -303,7 +321,11 @@ router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
       website,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Website update error:", error.message);
+    res.status(500).json({ 
+      error: error.message,
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined
+    });
   }
 });
 
