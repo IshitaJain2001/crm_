@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 import {
   FiPlus,
@@ -16,6 +17,7 @@ import {
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Tasks = () => {
+  const { isDark } = useTheme();
   const token = useSelector((state) => state.auth.token);
   const user = useSelector((state) => state.auth.user);
   const [tasks, setTasks] = useState([]);
@@ -78,7 +80,6 @@ const Tasks = () => {
         priority: formData.priority,
       };
 
-      // Only add assignedTo if it's specified and user can assign
       if (
         formData.assignedTo &&
         ["superadmin", "admin", "hr", "sales"].includes(user?.role)
@@ -141,23 +142,37 @@ const Tasks = () => {
   };
 
   const getStatusColor = (status) => {
-    const colors = {
+    const lightColors = {
       pending: "bg-yellow-100 text-yellow-800",
       in_progress: "bg-blue-100 text-blue-800",
       completed: "bg-green-100 text-green-800",
       on_hold: "bg-gray-100 text-gray-800",
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    const darkColors = {
+      pending: "bg-yellow-900 text-yellow-300",
+      in_progress: "bg-blue-900 text-blue-300",
+      completed: "bg-green-900 text-green-300",
+      on_hold: "bg-gray-700 text-gray-300",
+    };
+    const colorMap = isDark ? darkColors : lightColors;
+    return colorMap[status] || (isDark ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-800");
   };
 
   const getPriorityColor = (priority) => {
-    const colors = {
+    const lightColors = {
       low: "text-green-600",
       medium: "text-yellow-600",
       high: "text-orange-600",
       urgent: "text-red-600",
     };
-    return colors[priority] || "text-gray-600";
+    const darkColors = {
+      low: "text-green-400",
+      medium: "text-yellow-400",
+      high: "text-orange-400",
+      urgent: "text-red-400",
+    };
+    const colorMap = isDark ? darkColors : lightColors;
+    return colorMap[priority] || (isDark ? "text-gray-400" : "text-gray-600");
   };
 
   const canAssignTasks = ["superadmin", "admin", "hr", "sales"].includes(
@@ -165,150 +180,148 @@ const Tasks = () => {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <Sidebar />
 
-      <div className="flex-1 overflow-auto">
+      <div className={`absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300`}>
         <Header title="Tasks" />
 
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">My Tasks</h3>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold"
-            >
-              <FiPlus size={20} />
-              Create Task
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="bg-white rounded-lg shadow p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading tasks...</p>
+        <div className={`flex-1 overflow-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+          <div className="p-6 mx-auto w-7/10 mt-16">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>My Tasks</h3>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold"
+              >
+                <FiPlus size={20} />
+                Create Task
+              </button>
             </div>
-          ) : tasks.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-12 text-center">
-              <FiCheckCircle size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500 mb-2">No tasks yet</p>
-              <p className="text-sm text-gray-400">
-                Create your first task to get started
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {tasks.map((task) => (
-                <div
-                  key={task._id}
-                  className={`bg-white rounded-lg shadow p-4 hover:shadow-md transition ${
-                    task.status === "completed" ? "opacity-75" : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3">
-                        <button
-                          onClick={() => handleCompleteTask(task._id)}
-                          className={`mt-1 ${
-                            task.status === "completed"
-                              ? "text-green-600"
-                              : "text-gray-400 hover:text-green-600"
-                          }`}
-                        >
-                          <FiCheckCircle size={20} />
-                        </button>
 
-                        <div className="flex-1">
-                          <h3
-                            className={`font-semibold text-gray-900 ${
+            {loading ? (
+              <div className={`rounded-lg shadow p-12 text-center ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Loading tasks...</p>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className={`rounded-lg shadow p-12 text-center ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+                <FiCheckCircle size={48} className={`mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                <p className={`mb-2 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>No tasks yet</p>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
+                  Create your first task to get started
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {tasks.map((task) => (
+                  <div
+                    key={task._id}
+                    className={`rounded-lg shadow p-4 hover:shadow-md transition ${
+                      isDark ? 'bg-gray-800' : 'bg-white'
+                    } ${task.status === "completed" ? "opacity-75" : ""}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-start gap-3">
+                          <button
+                            onClick={() => handleCompleteTask(task._id)}
+                            className={`mt-1 ${
                               task.status === "completed"
-                                ? "line-through text-gray-500"
-                                : ""
+                                ? isDark ? "text-green-400" : "text-green-600"
+                                : isDark ? "text-gray-500 hover:text-green-400" : "text-gray-400 hover:text-green-600"
                             }`}
                           >
-                            {task.subject}
-                          </h3>
+                            <FiCheckCircle size={20} />
+                          </button>
 
-                          {task.description && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              {task.description}
-                            </p>
-                          )}
-
-                          <div className="flex flex-wrap items-center gap-3 mt-3">
-                            <span
-                              className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(
-                                task.status || "pending",
-                              )}`}
+                          <div className="flex-1">
+                            <h3
+                              className={`font-semibold ${
+                                task.status === "completed"
+                                  ? isDark ? "line-through text-gray-500" : "line-through text-gray-500"
+                                  : isDark ? "text-white" : "text-gray-900"
+                              }`}
                             >
-                              {(task.status || "pending").replace("_", " ")}
-                            </span>
+                              {task.subject}
+                            </h3>
 
-                            <span
-                              className={`text-xs font-semibold ${getPriorityColor(
-                                task.priority,
-                              )}`}
-                            >
-                              {task.priority.toUpperCase()}
-                            </span>
-
-                            {task.dueDate && (
-                              <div className="flex items-center gap-1 text-xs text-gray-600">
-                                <FiClock size={14} />
-                                {new Date(task.dueDate).toLocaleDateString()}
-                              </div>
+                            {task.description && (
+                              <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {task.description}
+                              </p>
                             )}
 
-                            {task.assignedTo && (
-                              <div className="text-xs text-gray-600">
-                                <span className="font-medium">
-                                  Assigned to:
-                                </span>{" "}
-                                {task.assignedTo.name}
-                              </div>
-                            )}
+                            <div className="flex flex-wrap items-center gap-3 mt-3">
+                              <span
+                                className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(
+                                  task.status || "pending",
+                                )}`}
+                              >
+                                {(task.status || "pending").replace("_", " ")}
+                              </span>
+
+                              <span
+                                className={`text-xs font-semibold ${getPriorityColor(
+                                  task.priority,
+                                )}`}
+                              >
+                                {task.priority.toUpperCase()}
+                              </span>
+
+                              {task.dueDate && (
+                                <div className={`flex items-center gap-1 text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <FiClock size={14} />
+                                  {new Date(task.dueDate).toLocaleDateString()}
+                                </div>
+                              )}
+
+                              {task.assignedTo && (
+                                <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <span className="font-medium">Assigned to:</span>{" "}
+                                  {task.assignedTo.name}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => handleDeleteTask(task._id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                        title="Delete task"
-                      >
-                        <FiTrash2 size={18} />
-                      </button>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleDeleteTask(task._id)}
+                          className={`p-2 rounded-lg transition ${isDark ? 'text-red-400 hover:bg-red-900' : 'text-red-600 hover:bg-red-50'}`}
+                          title="Delete task"
+                        >
+                          <FiTrash2 size={18} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Create Task Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-            {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-2xl font-bold text-gray-800">Create Task</h2>
+          <div className={`rounded-lg shadow-xl w-full max-w-lg ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`flex justify-between items-center p-6 border-b ${isDark ? 'border-gray-700' : ''}`}>
+              <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Create Task</h2>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className={isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}
               >
                 <FiX size={24} />
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Task Subject *
                 </label>
                 <input
@@ -318,12 +331,12 @@ const Tasks = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, subject: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900'}`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Description
                 </label>
                 <textarea
@@ -332,13 +345,13 @@ const Tasks = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900'}`}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Due Date
                   </label>
                   <input
@@ -347,12 +360,12 @@ const Tasks = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, dueDate: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Priority
                   </label>
                   <select
@@ -360,7 +373,7 @@ const Tasks = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, priority: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -372,7 +385,7 @@ const Tasks = () => {
 
               {canAssignTasks && teamMembers.length > 0 && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Assign To (Optional)
                   </label>
                   <select
@@ -380,29 +393,28 @@ const Tasks = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, assignedTo: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
                   >
                     <option value="">-- Assign to Self --</option>
                     {teamMembers
-                      .filter((member) => member.id !== user?.id) // Filter out current user
+                      .filter((member) => member.id !== user?.id)
                       .map((member) => (
                         <option key={member.id} value={member.id}>
                           {member.name} ({member.email})
                         </option>
                       ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     Select a team member to assign this task
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Footer */}
-            <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
+            <div className={`flex justify-end gap-3 p-6 border-t ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50'}`}>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100"
+                className={`px-4 py-2 rounded-lg ${isDark ? 'text-gray-300 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 border border-gray-300 hover:bg-gray-100'}`}
               >
                 Cancel
               </button>

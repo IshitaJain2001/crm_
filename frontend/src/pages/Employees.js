@@ -3,12 +3,14 @@ import { useSelector } from 'react-redux';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import { useTheme } from '../context/ThemeContext';
 import { FiPlus, FiTrash2, FiEdit2, FiMail, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const Employees = () => {
+  const { isDark } = useTheme();
   const token = useSelector(state => state.auth.token);
   const [employees, setEmployees] = useState([]);
   const [pendingInvitations, setPendingInvitations] = useState([]);
@@ -149,29 +151,29 @@ const Employees = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <Sidebar />
       <div className="flex-1 overflow-auto">
         <Header title="My Employees" />
 
-        <div className="p-6">
+        <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
           {/* Tabs */}
-          <div className="flex gap-4 mb-6 border-b border-gray-200">
+          <div className={`flex gap-4 mb-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
             <button
               onClick={() => setTab('active')}
-              className={`px-4 py-2 font-semibold ${tab === 'active' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'}`}
+              className={`px-4 py-2 font-semibold ${tab === 'active' ? 'border-b-2 border-blue-600 text-blue-600' : isDark ? 'text-gray-400' : 'text-gray-600'}`}
             >
               Active Employees
             </button>
             <button
               onClick={() => setTab('inactive')}
-              className={`px-4 py-2 font-semibold ${tab === 'inactive' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'}`}
+              className={`px-4 py-2 font-semibold ${tab === 'inactive' ? 'border-b-2 border-blue-600 text-blue-600' : isDark ? 'text-gray-400' : 'text-gray-600'}`}
             >
               Inactive
             </button>
             <button
               onClick={() => setTab('pending')}
-              className={`px-4 py-2 font-semibold ${tab === 'pending' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'}`}
+              className={`px-4 py-2 font-semibold ${tab === 'pending' ? 'border-b-2 border-blue-600 text-blue-600' : isDark ? 'text-gray-400' : 'text-gray-600'}`}
             >
               Pending Invitations
             </button>
@@ -179,7 +181,7 @@ const Employees = () => {
 
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>
               {tab === 'active' && 'Active Employees'}
               {tab === 'inactive' && 'Inactive Employees'}
               {tab === 'pending' && 'Pending Invitations'}
@@ -197,48 +199,48 @@ const Employees = () => {
 
           {/* Invite Form */}
           {showInviteForm && (
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h4 className="text-lg font-semibold mb-4">Invite Employee</h4>
+            <div className={`rounded-lg shadow p-6 mb-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : ''}`}>Invite Employee</h4>
               <form onSubmit={handleInvite} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
-                  type="text"
-                  placeholder="First Name *"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Last Name"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-                <input
-                  type="email"
-                  placeholder="Email *"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-                <select
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                >
-                  <option value="other">Select Department</option>
-                  <option value="sales">Sales</option>
-                  <option value="hr">HR</option>
-                  <option value="support">Support</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="management">Management</option>
-                  <option value="tech">Tech</option>
-                </select>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                >
+                   type="text"
+                   placeholder="First Name *"
+                   value={formData.firstName}
+                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900'}`}
+                 />
+                 <input
+                   type="text"
+                   placeholder="Last Name"
+                   value={formData.lastName}
+                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900'}`}
+                 />
+                 <input
+                   type="email"
+                   placeholder="Email *"
+                   value={formData.email}
+                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900'}`}
+                 />
+                 <select
+                   value={formData.department}
+                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
+                 >
+                   <option value="other">Select Department</option>
+                   <option value="sales">Sales</option>
+                   <option value="hr">HR</option>
+                   <option value="support">Support</option>
+                   <option value="marketing">Marketing</option>
+                   <option value="management">Management</option>
+                   <option value="tech">Tech</option>
+                 </select>
+                 <select
+                   value={formData.role}
+                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
+                 >
                   <option value="employee">Employee</option>
                   <option value="sales">Sales</option>
                   <option value="hr">HR</option>
@@ -270,52 +272,52 @@ const Employees = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className={`rounded-lg shadow overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className={`border-b ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50'}`}>
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                    <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Name</th>
+                    <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Email</th>
                     {tab !== 'pending' && (
                       <>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Role</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Department</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                        <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Role</th>
+                        <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Department</th>
+                        <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
                       </>
                     )}
                     {tab === 'pending' && (
                       <>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Role</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Invited On</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Expires</th>
+                        <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Role</th>
+                        <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Invited On</th>
+                        <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Expires</th>
                       </>
                     )}
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                    <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {tab === 'pending' ? (
-                    pendingInvitations.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                          No pending invitations
-                        </td>
-                      </tr>
-                    ) : (
-                      pendingInvitations.map((inv) => (
-                        <tr key={inv._id} className="border-b hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{inv.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{inv.email}</td>
-                          <td className="px-6 py-4 text-sm">
-                            <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-semibold">
-                              {inv.role.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {new Date(inv.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {new Date(inv.expiresAt).toLocaleDateString()}
+                   {tab === 'pending' ? (
+                     pendingInvitations.length === 0 ? (
+                       <tr>
+                         <td colSpan="6" className={`px-6 py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                           No pending invitations
+                         </td>
+                       </tr>
+                     ) : (
+                       pendingInvitations.map((inv) => (
+                         <tr key={inv._id} className={`border-b ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                           <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{inv.email}</td>
+                           <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{inv.email}</td>
+                           <td className="px-6 py-4 text-sm">
+                             <span className={`px-2 py-1 rounded text-xs font-semibold ${isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
+                               {inv.role.toUpperCase()}
+                             </span>
+                           </td>
+                           <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                             {new Date(inv.createdAt).toLocaleDateString()}
+                           </td>
+                           <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                             {new Date(inv.expiresAt).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 text-sm space-x-2">
                             <button

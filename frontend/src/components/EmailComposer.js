@@ -79,8 +79,19 @@ const EmailComposer = ({ isOpen, onClose, contactEmail, contactName, onSuccess }
   };
 
   const handleSendEmail = async () => {
+    // Auto-add any remaining recipients in the input field
+    let toRecipients = [...formData.to];
+    if (recipients.trim()) {
+      const emails = recipients.split(/[,;]/).map(e => e.trim()).filter(e => e);
+      const newRecipients = emails.map(email => ({
+        email,
+        name: ''
+      }));
+      toRecipients = [...toRecipients, ...newRecipients];
+    }
+
     // Validate
-    if (formData.to.length === 0) {
+    if (toRecipients.length === 0) {
       toast.error('Add at least one recipient');
       return;
     }
@@ -98,16 +109,20 @@ const EmailComposer = ({ isOpen, onClose, contactEmail, contactName, onSuccess }
     setLoading(true);
 
     try {
+      const emailPayload = {
+        to: toRecipients.map(r => r.email),
+        cc: formData.cc.map(r => r.email),
+        bcc: formData.bcc.map(r => r.email),
+        subject: formData.subject,
+        body: formData.body,
+        templateId: formData.templateId || undefined
+      };
+
+      console.log('Sending email with payload:', emailPayload);
+
       const response = await axios.post(
         `${API_URL}/api/emails/send`,
-        {
-          to: formData.to,
-          cc: formData.cc,
-          bcc: formData.bcc,
-          subject: formData.subject,
-          body: formData.body,
-          templateId: formData.templateId || undefined
-        },
+        emailPayload,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -170,7 +185,7 @@ const EmailComposer = ({ isOpen, onClose, contactEmail, contactName, onSuccess }
                 value={recipients}
                 onChange={(e) => setRecipients(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddRecipient()}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
               />
               <button
                 onClick={handleAddRecipient}
@@ -211,7 +226,7 @@ const EmailComposer = ({ isOpen, onClose, contactEmail, contactName, onSuccess }
               placeholder="Email subject..."
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
             />
           </div>
 
@@ -226,7 +241,7 @@ const EmailComposer = ({ isOpen, onClose, contactEmail, contactName, onSuccess }
                   const template = templates.find(t => t._id === e.target.value);
                   if (template) handleTemplateSelect(template);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
               >
                 <option value="">Select a template...</option>
                 {templates.map(template => (
@@ -247,7 +262,7 @@ const EmailComposer = ({ isOpen, onClose, contactEmail, contactName, onSuccess }
               placeholder="Write your email message..."
               value={formData.body}
               onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-64 font-mono text-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-64 font-mono text-sm bg-white text-gray-900"
             />
           </div>
 

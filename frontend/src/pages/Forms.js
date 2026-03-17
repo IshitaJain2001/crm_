@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 import {
   FiPlus,
@@ -16,6 +17,7 @@ import {
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Forms = () => {
+  const { isDark } = useTheme();
   const token = useSelector((state) => state.auth.token);
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,22 +92,28 @@ const Forms = () => {
   };
 
   const getStatusBadge = (status) => {
-    const colors = {
+    const lightColors = {
       draft: "bg-gray-100 text-gray-800",
       published: "bg-green-100 text-green-800",
       archived: "bg-red-100 text-red-800",
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    const darkColors = {
+      draft: "bg-gray-700 text-gray-300",
+      published: "bg-green-900 text-green-300",
+      archived: "bg-red-900 text-red-300",
+    };
+    const colorMap = isDark ? darkColors : lightColors;
+    return colorMap[status] || (isDark ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-800");
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <Sidebar />
 
       <div className="flex-1 overflow-auto">
         <Header title="Forms & Lead Capture" />
 
-        <div className="p-6">
+        <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
           {/* Create Button */}
           <div className="mb-6">
             <button
@@ -117,21 +125,21 @@ const Forms = () => {
           </div>
 
           {/* Create Form Modal */}
-          {showCreateForm && (
-            <div className="mb-6 bg-white rounded-lg shadow p-6 border-l-4 border-blue-600">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Create New Form
-              </h3>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Form title (e.g., Contact Us, Newsletter Signup)"
-                  value={newFormTitle}
-                  onChange={(e) => setNewFormTitle(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && createForm()}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  autoFocus
-                />
+           {showCreateForm && (
+             <div className={`mb-6 rounded-lg shadow p-6 border-l-4 border-blue-600 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+               <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                 Create New Form
+               </h3>
+               <div className="space-y-4">
+                 <input
+                   type="text"
+                   placeholder="Form title (e.g., Contact Us, Newsletter Signup)"
+                   value={newFormTitle}
+                   onChange={(e) => setNewFormTitle(e.target.value)}
+                   onKeyPress={(e) => e.key === "Enter" && createForm()}
+                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900'}`}
+                   autoFocus
+                 />
                 <div className="flex gap-2">
                   <button
                     onClick={createForm}

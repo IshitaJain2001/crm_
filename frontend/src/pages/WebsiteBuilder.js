@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
-import introJs from "intro.js";
-import "intro.js/minified/introjs.min.css";
 import { generateModularCode } from "./CodeGenerator";
 import {
   FiPlus,
@@ -1104,40 +1102,7 @@ export default function ${componentName}() {
   };
 
   const startTour = () => {
-    const intro = introJs();
-    intro.setOptions({
-      steps: [
-        {
-          element: ".elements-panel",
-          intro:
-            "👋 Welcome! This panel contains elements you can add to your sections.",
-          position: "right",
-        },
-        {
-          element: ".sections-list",
-          intro: "📑 Click any section to select and edit it.",
-          position: "right",
-        },
-        {
-          element: ".canvas-area",
-          intro:
-            "🎨 This is your canvas. Edit content directly or drag elements to reorder.",
-          position: "left",
-        },
-        {
-          element: ".properties-panel",
-          intro:
-            "⚙️ Select an element to customize fonts, colors, spacing, and more.",
-          position: "left",
-        },
-      ],
-      showProgress: true,
-      showBullets: true,
-      keyboardNavigation: true,
-      scrollToElement: true,
-    });
-
-    intro.start();
+    toast.info("Tour feature coming soon!");
   };
 
   if (loading && !website) {

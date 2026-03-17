@@ -1,245 +1,189 @@
-const express = require("express");
-const Activity = require("../models/Activity");
-const User = require("../models/User");
-const { authMiddleware } = require("../middleware/auth");
-const { sendTaskAssignedEmail } = require("../services/emailService");
-
+const express = require('express');
 const router = express.Router();
+const Task = require('../models/Task');
+const { authenticate } = require('../middleware/auth');
 
-// Get all tasks - filter by assigned to current user
-router.get("/", authMiddleware, async (req, res) => {
+// Get dashboard stats
+router.get('/stats/dashboard', authenticate, async (req, res) => {
   try {
-    const { page = 1, limit = 20, status, priority } = req.query;
+    const workspaceId = req.user.workspaceId;
 
-    // Employees can only see tasks assigned to them
-    let query = {
-      type: "task",
-      assignedTo: req.user.id,
-    };
+    const stats = await Task.aggregate([
+      { $match: { workspaceId: require('mongoose').Types.ObjectId(workspaceId) } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
 
-    if (status) query.status = status;
-    if (priority) query.priority = priority;
-
-    const tasks = await Activity.find(query)
-      .populate("contact")
-      .populate("assignedTo", "name email")
-      .populate("owner", "name email")
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .sort({ dueDate: 1 });
-
-    const total = await Activity.countDocuments(query);
-
-    res.json({
-      tasks,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total,
+    const overdue = await Task.countDocuments({
+      workspaceId,
+      status: { $ne: 'completed' },
+      dueDate: { $lt: new Date() }
     });
+
+    res.json({ stats, overdue });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Create task - with permission checks
-router.post("/", authMiddleware, async (req, res) => {
+// Get tasks by related object
+router.get('/related/:type/:id', authenticate, async (req, res) => {
   try {
-    const { subject, description, contact, dueDate, priority, assignedTo } =
-      req.body;
+    const { type, id } = req.params;
+    
+    const tasks = await Task.find({
+      workspaceId: req.user.workspaceId,
+      'relatedTo.type': type,
+      'relatedTo.id': id
+    })
+    .populate('assignedTo', 'name email avatar')
+    .sort({ dueDate: 1 });
 
-    // Validate required fields
-    if (!subject) {
-      return res.status(400).json({ error: "Task subject is required" });
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all tasks for workspace
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const { status, assignedTo, priority, dueBefore, dueAfter } = req.query;
+    const workspaceId = req.user.workspaceId;
+
+    let query = { workspaceId };
+
+    if (status) query.status = status;
+    if (assignedTo) query.assignedTo = assignedTo;
+    if (priority) query.priority = priority;
+
+    if (dueBefore || dueAfter) {
+      query.dueDate = {};
+      if (dueBefore) query.dueDate.$lte = new Date(dueBefore);
+      if (dueAfter) query.dueDate.$gte = new Date(dueAfter);
     }
 
-    // Check if user is allowed to assign tasks
-    const currentUser = await User.findById(req.user.id);
-    const isAdmin =
-      currentUser.role === "superadmin" || currentUser.role === "admin";
-    const isLeadRole = ["superadmin", "admin", "hr", "sales"].includes(
-      currentUser.role,
-    );
+    const tasks = await Task.find(query)
+      .populate('assignedTo', 'name email avatar')
+      .populate('createdBy', 'name email')
+      .sort({ dueDate: 1 })
+      .lean();
 
-    // Only admin/superadmin/hr/sales can assign tasks to others
-    if (assignedTo && assignedTo.toString() !== req.user.id) {
-      if (!isLeadRole) {
-        return res.status(403).json({
-          error: "Only admins and team leads can assign tasks to other users",
-        });
-      }
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-      // Verify assignedTo user exists and is in same company
-      const assignedUser = await User.findById(assignedTo);
-      if (!assignedUser) {
-        return res.status(404).json({ error: "Assigned user not found" });
-      }
+// Get task by ID
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id)
+      .populate('assignedTo', 'name email avatar')
+      .populate('createdBy', 'name email')
+      .populate('relatedTo.id');
 
-      if (assignedUser.company.toString() !== currentUser.company.toString()) {
-        return res.status(403).json({
-          error: "Cannot assign task to user from different company",
-        });
-      }
-    }
+    if (!task) return res.status(404).json({ error: 'Task not found' });
 
-    // If assignedTo is not provided, assign to self
-    const taskAssignedTo = assignedTo || req.user.id;
+    res.json(task);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    const task = new Activity({
-      type: "task",
-      subject,
+// Create task
+router.post('/', authenticate, async (req, res) => {
+  try {
+    const { title, description, assignedTo, dueDate, priority, relatedTo } = req.body;
+
+    const task = await Task.create({
+      workspaceId: req.user.workspaceId,
+      title,
       description,
-      contact,
-      dueDate,
-      priority: priority || "medium",
-      assignedTo: taskAssignedTo,
-      owner: req.user.id,
-      company: currentUser.company,
+      assignedTo,
+      dueDate: dueDate ? new Date(dueDate) : null,
+      priority: priority || 'medium',
+      relatedTo,
+      createdBy: req.user._id,
+      createdVia: 'user'
     });
 
-    await task.save();
-    await task.populate(["contact", "assignedTo"]);
+    await task.populate('assignedTo', 'name email avatar');
+    res.status(201).json(task);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    // Send assignment email if assigned to someone else
-    if (taskAssignedTo.toString() !== req.user.id) {
-      try {
-        const assignedUser = await User.findById(taskAssignedTo);
-        const createdByUser = await User.findById(req.user.id);
-        if (assignedUser) {
-          await sendTaskAssignedEmail(task, assignedUser, createdByUser);
+// Update task
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { title, description, status, assignedTo, dueDate, priority } = req.body;
+
+    const updateData = {
+      title,
+      description,
+      status,
+      assignedTo,
+      priority,
+      updatedAt: new Date()
+    };
+
+    if (dueDate) updateData.dueDate = new Date(dueDate);
+
+    // If status is completed, set completedAt
+    if (status === 'completed') {
+      updateData.completedAt = new Date();
+    }
+
+    const task = await Task.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    ).populate('assignedTo', 'name email avatar');
+
+    res.json(task);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete task
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Task deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add comment to task
+router.post('/:id/comments', authenticate, async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    const task = await Task.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          comments: {
+            author: req.user._id,
+            content,
+            createdAt: new Date()
+          }
         }
-      } catch (emailError) {
-        console.error("Task created but assignment email failed:", emailError);
-      }
-    }
+      },
+      { new: true }
+    ).populate('comments.author', 'name email avatar');
 
-    res.status(201).json({
-      message: "Task created successfully",
-      task,
-    });
+    res.json(task);
   } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Update task - with permission checks
-router.put("/:taskId", authMiddleware, async (req, res) => {
-  try {
-    const { assignedTo, status, priority, subject, description, dueDate } =
-      req.body;
-
-    const task = await Activity.findById(req.params.taskId);
-
-    if (!task) {
-      return res.status(404).json({ error: "Task not found" });
-    }
-
-    // Check authorization: owner, assigned user, or admin
-    const currentUser = await User.findById(req.user.id);
-    const isOwner = task.owner.toString() === req.user.id;
-    const isAssigned = task.assignedTo?.toString() === req.user.id;
-    const isAdmin =
-      currentUser.role === "superadmin" || currentUser.role === "admin";
-    const isLeadRole = ["superadmin", "admin", "hr", "sales"].includes(
-      currentUser.role,
-    );
-
-    if (!isOwner && !isAssigned && !isLeadRole) {
-      return res.status(403).json({
-        error:
-          "Only task owner, assigned user, admin, or team lead can update task",
-      });
-    }
-
-    // Only owner/admin/lead can reassign to someone else
-    if (assignedTo && assignedTo.toString() !== task.assignedTo?.toString()) {
-      if (!isOwner && !isLeadRole) {
-        return res.status(403).json({
-          error: "Only task owner, admin, or team lead can reassign tasks",
-        });
-      }
-
-      // Verify new assigned user exists and is in same company
-      const newAssignedUser = await User.findById(assignedTo);
-      if (!newAssignedUser) {
-        return res.status(404).json({ error: "Assigned user not found" });
-      }
-
-      if (
-        newAssignedUser.company.toString() !== currentUser.company.toString()
-      ) {
-        return res.status(403).json({
-          error: "Cannot assign task to user from different company",
-        });
-      }
-
-      // Send reassignment notification
-      try {
-        const {
-          createNotification,
-        } = require("../services/notificationService");
-        await createNotification({
-          company: currentUser.company,
-          userId: assignedTo,
-          type: "task_assigned",
-          title: `Task Reassigned: ${task.subject}`,
-          message: `${currentUser.name} reassigned you "${task.subject}"`,
-          resourceType: "task",
-          resourceId: task._id,
-          actorId: req.user.id,
-          actorName: currentUser.name,
-          actionUrl: `/tasks/${task._id}`,
-        });
-      } catch (notifError) {
-        console.error("Notification creation failed:", notifError);
-      }
-
-      task.assignedTo = assignedTo;
-    }
-
-    // Update allowed fields
-    if (subject) task.subject = subject;
-    if (description) task.description = description;
-    if (dueDate) task.dueDate = dueDate;
-    if (priority) task.priority = priority;
-    if (status) task.status = status;
-
-    await task.save();
-    await task.populate(["contact", "assignedTo"]);
-
-    res.json({
-      message: "Task updated successfully",
-      task,
-    });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Delete task - only owner or admin can delete
-router.delete("/:taskId", authMiddleware, async (req, res) => {
-  try {
-    const task = await Activity.findById(req.params.taskId);
-
-    if (!task) {
-      return res.status(404).json({ error: "Task not found" });
-    }
-
-    const currentUser = await User.findById(req.user.id);
-    const isOwner = task.owner.toString() === req.user.id;
-    const isAdmin =
-      currentUser.role === "superadmin" || currentUser.role === "admin";
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({
-        error: "Only task owner or admin can delete tasks",
-      });
-    }
-
-    await Activity.findByIdAndDelete(req.params.taskId);
-
-    res.json({ message: "Task deleted successfully" });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 

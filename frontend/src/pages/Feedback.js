@@ -3,11 +3,13 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Feedback = () => {
+  const { isDark } = useTheme();
   const token = useSelector((state) => state.auth.token);
   const user = useSelector((state) => state.auth.user);
 
@@ -97,13 +99,20 @@ const Feedback = () => {
   };
 
   const getStatusColor = (status) => {
-    const colors = {
+    const lightColors = {
       new: "bg-blue-100 text-blue-800",
       reviewed: "bg-yellow-100 text-yellow-800",
       in_progress: "bg-purple-100 text-purple-800",
       resolved: "bg-green-100 text-green-800",
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    const darkColors = {
+      new: "bg-blue-900 text-blue-300",
+      reviewed: "bg-yellow-900 text-yellow-300",
+      in_progress: "bg-purple-900 text-purple-300",
+      resolved: "bg-green-900 text-green-300",
+    };
+    const colorMap = isDark ? darkColors : lightColors;
+    return colorMap[status] || (isDark ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-800");
   };
 
   const getStatusLabel = (status) => {
@@ -117,11 +126,19 @@ const Feedback = () => {
   };
 
   const getRatingColor = (rating) => {
-    if (rating === 5) return "text-green-600";
-    if (rating === 4) return "text-blue-600";
-    if (rating === 3) return "text-yellow-600";
-    if (rating === 2) return "text-orange-600";
-    return "text-red-600";
+    if (isDark) {
+      if (rating === 5) return "text-green-400";
+      if (rating === 4) return "text-blue-400";
+      if (rating === 3) return "text-yellow-400";
+      if (rating === 2) return "text-orange-400";
+      return "text-red-400";
+    } else {
+      if (rating === 5) return "text-green-600";
+      if (rating === 4) return "text-blue-600";
+      if (rating === 3) return "text-yellow-600";
+      if (rating === 2) return "text-orange-600";
+      return "text-red-600";
+    }
   };
 
   const getCategoryLabel = (category) => {
@@ -137,14 +154,14 @@ const Feedback = () => {
 
   if (user?.role !== "superadmin") {
     return (
-      <div className="flex h-screen bg-gray-100">
+      <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
               Access Denied
             </h2>
-            <p className="text-gray-600">
+            <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
               Only superadmins can access feedback
             </p>
           </div>
@@ -154,13 +171,13 @@ const Feedback = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <Sidebar />
 
       <div className="flex-1 overflow-auto">
         <Header title="Feedback & Suggestions" />
 
-        <div className="p-6 max-w-4xl">
+        <div className={`p-6 max-w-4xl ${isDark ? 'bg-gray-900' : ''}`}>
           {/* Tabs */}
           <div className="flex gap-4 mb-6">
             <button
@@ -168,7 +185,7 @@ const Feedback = () => {
               className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
                 tab === "submit"
                   ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  : isDark ? "bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
               }`}
             >
               📝 Send Feedback
@@ -178,7 +195,7 @@ const Feedback = () => {
               className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
                 tab === "history"
                   ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  : isDark ? "bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
               }`}
             >
               📋 Feedback History
@@ -187,12 +204,12 @@ const Feedback = () => {
 
           {/* SUBMIT FEEDBACK TAB */}
           {tab === "submit" && (
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
                   Share Your Feedback
                 </h2>
-                <p className="text-gray-600">
+                <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                   Help us improve the CRM by sharing your thoughts, suggestions,
                   or reporting any issues you encounter.
                 </p>
@@ -201,7 +218,7 @@ const Feedback = () => {
               <form onSubmit={handleSubmitFeedback} className="space-y-6">
                 {/* Rating */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className={`block text-sm font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     How would you rate your experience? ⭐
                   </label>
                   <div className="flex gap-2">
@@ -213,27 +230,27 @@ const Feedback = () => {
                         className={`w-12 h-12 rounded-lg font-bold text-lg transition-all ${
                           rating === r
                             ? "bg-blue-600 text-white scale-110"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            : isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                         }`}
                       >
                         {r}
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     1 = Poor, 5 = Excellent
                   </p>
                 </div>
 
                 {/* Category */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Category
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${isDark ? 'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-900' : 'border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-200'}`}
                   >
                     <option value="general">General Feedback</option>
                     <option value="feature_request">Feature Request</option>
@@ -245,7 +262,7 @@ const Feedback = () => {
 
                 {/* Subject */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Subject
                   </label>
                   <input
@@ -253,16 +270,16 @@ const Feedback = () => {
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="Brief title of your feedback"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-900' : 'border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-200'}`}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     Minimum 5 characters
                   </p>
                 </div>
 
                 {/* Message */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Your Message
                   </label>
                   <textarea
@@ -270,9 +287,9 @@ const Feedback = () => {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Please describe your feedback in detail..."
                     rows="6"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 resize-none ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-900' : 'border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-200'}`}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     Minimum 10 characters (
                     {message.length}/10)
                   </p>

@@ -1,15 +1,21 @@
 module.exports = function override(config, env) {
-  config.module.rules.forEach(rule => {
-    if (rule.test && rule.test.toString().includes('source-map')) {
-      rule.exclude = /node_modules/;
+  // Completely disable source maps for intro.js
+  config.module.rules = config.module.rules.map(rule => {
+    if (rule.use && Array.isArray(rule.use)) {
+      rule.use = rule.use.filter(loader => {
+        if (typeof loader === 'string') {
+          return !loader.includes('source-map-loader');
+        }
+        return !loader || !loader.loader || !loader.loader.includes('source-map-loader');
+      });
     }
+    return rule;
   });
 
-  config.module.rules.push({
-    test: /\.js$/,
-    enforce: 'pre',
-    use: ['source-map-loader'],
-    exclude: [/node_modules\/intro\.js/]
+  // Add new rule that explicitly excludes intro.js from source map processing
+  config.module.rules.unshift({
+    test: /intro\.js/,
+    use: []
   });
 
   return config;

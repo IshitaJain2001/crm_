@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useTheme } from '../context/ThemeContext';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 
 const SimpleChat = () => {
+  const { isDark } = useTheme();
   const [userRole, setUserRole] = useState('employee');
   const [chatbot, setChatbot] = useState(null);
   const [faqs, setFaqs] = useState([]);
@@ -93,50 +95,50 @@ const SimpleChat = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div></div>;
+    return <div className={`flex items-center justify-center h-screen ${isDark ? 'bg-gray-900' : ''}`}><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div></div>;
   }
 
   // ADMIN VIEW
   if (userRole === 'superadmin' || userRole === 'admin') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
+      <div className={`min-h-screen p-6 ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'}`}>
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Employee Support</h1>
-            <p className="text-gray-600">Manage questions and answers for your team</p>
+            <h1 className={`text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Employee Support</h1>
+            <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Manage questions and answers for your team</p>
           </div>
 
           {/* Add Q&A Section */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-blue-100">
+          <div className={`rounded-2xl shadow-lg p-8 mb-8 border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-blue-100'}`}>
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                <FaPlus className="text-white" size={20} />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Add New Question</h2>
-            </div>
-            
-            <form onSubmit={handleAddFAQ} className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Question</label>
-                <input
-                  type="text"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="e.g., How to reset my password?"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Answer</label>
-                <textarea
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="e.g., Go to Settings > Change Password > Enter new password"
-                  rows="4"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 transition resize-none"
-                />
-              </div>
+               <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                 <FaPlus className="text-white" size={20} />
+               </div>
+               <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Add New Question</h2>
+             </div>
+             
+             <form onSubmit={handleAddFAQ} className="space-y-5">
+               <div>
+                 <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Question</label>
+                 <input
+                   type="text"
+                   value={question}
+                   onChange={(e) => setQuestion(e.target.value)}
+                   placeholder="e.g., How to reset my password?"
+                   className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200 bg-gray-50 text-gray-900'}`}
+                 />
+               </div>
+               <div>
+                 <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Answer</label>
+                 <textarea
+                   value={answer}
+                   onChange={(e) => setAnswer(e.target.value)}
+                   placeholder="e.g., Go to Settings > Change Password > Enter new password"
+                   rows="4"
+                   className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200 bg-gray-50 text-gray-900'}`}
+                 />
+               </div>
               <button
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 rounded-xl font-semibold transition shadow-md hover:shadow-lg"

@@ -58,6 +58,7 @@ app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/email-recommendations', require('./routes/emailRecommendations'));
 app.use('/api/website-builder', require('./routes/websiteBuilder'));
+app.use('/api/automation', require('./routes/automation'));
 
 // Health Check
 app.get('/api/health', (req, res) => {

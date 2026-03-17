@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Company = require('../models/Company');
 const { authMiddleware } = require('../middleware/auth');
 const { sendDealCreatedEmail } = require('../services/emailService');
+const automationService = require('../services/automationService');
 
 const router = express.Router();
 
@@ -107,6 +108,13 @@ router.post('/', authMiddleware, async (req, res) => {
     await deal.save();
     await deal.populate(['company', 'owner']);
 
+    // Trigger automation
+    try {
+      automationService.onDealCreated(deal);
+    } catch (automationError) {
+      console.error('Automation error:', automationError);
+    }
+
     // Send notification email
     try {
       const owner = await User.findById(req.user.id);
@@ -138,11 +146,22 @@ router.put('/:id', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
+    const oldStage = deal.dealStage;
+
     deal = await Deal.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     ).populate(['company', 'contact', 'owner']);
+
+    // Trigger automation if stage changed
+    if (req.body.dealStage && oldStage !== req.body.dealStage) {
+      try {
+        automationService.onDealStageChanged(deal, oldStage, req.body.dealStage);
+      } catch (automationError) {
+        console.error('Automation error:', automationError);
+      }
+    }
 
     res.json({
       message: 'Deal updated successfully',

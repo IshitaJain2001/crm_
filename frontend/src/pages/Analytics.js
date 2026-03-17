@@ -4,11 +4,13 @@ import axios from "axios";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Analytics = () => {
+  const { isDark } = useTheme();
   const token = useSelector((state) => state.auth.token);
   const user = useSelector((state) => state.auth.user);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ const Analytics = () => {
 
   if (!analytics || loading) {
     return (
-      <div className="flex h-screen bg-gray-100">
+      <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -64,16 +66,16 @@ const Analytics = () => {
   const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <Sidebar />
 
       <div className="flex-1 overflow-auto">
         <Header title="Company Analytics Dashboard" />
 
-        <div className="p-6">
+        <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
           {/* Refresh Button */}
           <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-800">Analytics Overview</h2>
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Analytics Overview</h2>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
@@ -84,20 +86,20 @@ const Analytics = () => {
           </div>
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {/* Revenue */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600 text-sm mb-2">Total Revenue</p>
-              <p className="text-3xl font-bold text-blue-600">
-                ${(analytics.totalRevenue / 1000).toFixed(1)}K
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                This Month: ${(analytics.revenueThisMonth / 1000).toFixed(1)}K
-              </p>
-              <p className={`text-sm font-semibold mt-2 ${analytics.revenueGrowth >= 0 ? "text-green-600" : "text-red-600"}`}>
-                {analytics.revenueGrowth >= 0 ? "↑" : "↓"} {Math.abs(analytics.revenueGrowth).toFixed(1)}% vs last month
-              </p>
-            </div>
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+             {/* Revenue */}
+             <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+               <p className={`text-sm mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Revenue</p>
+               <p className={`text-3xl font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                 ${(analytics.totalRevenue / 1000).toFixed(1)}K
+               </p>
+               <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                 This Month: ${(analytics.revenueThisMonth / 1000).toFixed(1)}K
+               </p>
+               <p className={`text-sm font-semibold mt-2 ${analytics.revenueGrowth >= 0 ? (isDark ? "text-green-400" : "text-green-600") : (isDark ? "text-red-400" : "text-red-600")}`}>
+                 {analytics.revenueGrowth >= 0 ? "↑" : "↓"} {Math.abs(analytics.revenueGrowth).toFixed(1)}% vs last month
+               </p>
+             </div>
 
             {/* Deals */}
             <div className="bg-white rounded-lg shadow p-6">

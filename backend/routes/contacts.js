@@ -3,6 +3,7 @@ const Contact = require('../models/Contact');
 const User = require('../models/User');
 const { authMiddleware, requirePermission } = require('../middleware/roleAuth');
 const { sendContactCreatedEmail } = require('../services/emailService');
+const automationService = require('../services/automationService');
 
 const router = express.Router();
 
@@ -83,6 +84,13 @@ router.post('/', authMiddleware, async (req, res) => {
 
     await contact.save();
     await contact.populate(['company', 'owner']);
+
+    // Trigger automation
+    try {
+      automationService.onContactCreated(contact);
+    } catch (automationError) {
+      console.error('Automation error:', automationError);
+    }
 
     // Send notification email
     try {

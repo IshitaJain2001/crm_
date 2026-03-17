@@ -4,10 +4,12 @@ import { fetchCompanies, createCompany, deleteCompany } from '../store/companies
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi';
+import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 
 const Companies = () => {
   const dispatch = useDispatch();
+  const { isDark } = useTheme();
   const { companies, loading } = useSelector(state => state.companies);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -57,15 +59,16 @@ const Companies = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <Sidebar />
       
-      <div className="flex-1 overflow-auto">
+      <div className={`absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300`}>
         <Header title="Client Companies" />
         
-        <div className="p-6">
+        <div className={`flex-1 overflow-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+          <div className="p-6 mx-auto w-7/10 mt-16">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">All Client Companies</h3>
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>All Client Companies</h3>
             <button
               onClick={() => setShowForm(!showForm)}
               className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
@@ -76,49 +79,49 @@ const Companies = () => {
           </div>
 
           {showForm && (
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h4 className="text-lg font-semibold mb-4">Add New Client Company</h4>
+            <div className={`rounded-lg shadow p-6 mb-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Add New Client Company</h4>
               <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Company Name *"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-                <input
-                  type="text"
-                  name="website"
-                  placeholder="Website"
-                  value={formData.website}
-                  onChange={handleChange}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-                <input
-                  type="text"
-                  name="industry"
-                  placeholder="Industry"
-                  value={formData.industry}
-                  onChange={handleChange}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-                <input
-                  type="text"
-                  name="phone"
-                  placeholder="Phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
+                 <input
+                   type="text"
+                   name="name"
+                   placeholder="Company Name *"
+                   value={formData.name}
+                   onChange={handleChange}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500'}`}
+                 />
+                 <input
+                   type="text"
+                   name="website"
+                   placeholder="Website"
+                   value={formData.website}
+                   onChange={handleChange}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500'}`}
+                 />
+                 <input
+                   type="text"
+                   name="industry"
+                   placeholder="Industry"
+                   value={formData.industry}
+                   onChange={handleChange}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500'}`}
+                 />
+                 <input
+                   type="text"
+                   name="phone"
+                   placeholder="Phone"
+                   value={formData.phone}
+                   onChange={handleChange}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500'}`}
+                 />
+                 <input
+                   type="email"
+                   name="email"
+                   placeholder="Email"
+                   value={formData.email}
+                   onChange={handleChange}
+                   className={`px-4 py-2 border rounded-lg focus:outline-none ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500'}`}
+                 />
                 <div className="flex gap-2">
                   <button
                     type="submit"
@@ -143,46 +146,46 @@ const Companies = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className={`rounded-lg shadow overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className={`border-b ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Company Name</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Website</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Industry</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Phone</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                    <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Company Name</th>
+                    <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Website</th>
+                    <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Industry</th>
+                    <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Phone</th>
+                    <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {companies.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                        No client companies yet. Add one to get started.
-                      </td>
-                    </tr>
-                  ) : (
-                    companies.map((company) => (
-                      <tr key={company._id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">{company.name}</td>
-                        <td className="px-6 py-4 text-sm text-blue-600">
-                          {company.website ? (
-                            <a href={company.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                              {company.website}
-                            </a>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{company.industry || '-'}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{company.phone || '-'}</td>
+                   {companies.length === 0 ? (
+                     <tr>
+                       <td colSpan="5" className={`px-6 py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                         No client companies yet. Add one to get started.
+                       </td>
+                     </tr>
+                   ) : (
+                     companies.map((company) => (
+                       <tr key={company._id} className={`border-b ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}>
+                         <td className={`px-6 py-4 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{company.name}</td>
+                         <td className={`px-6 py-4 text-sm ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                           {company.website ? (
+                             <a href={company.website} target="_blank" rel="noopener noreferrer" className={isDark ? 'hover:text-blue-300' : 'hover:underline'}>
+                               {company.website}
+                             </a>
+                           ) : (
+                             '-'
+                           )}
+                         </td>
+                         <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{company.industry || '-'}</td>
+                         <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{company.phone || '-'}</td>
                         <td className="px-6 py-4 text-sm space-x-2">
-                          <button className="text-blue-600 hover:text-blue-900">
+                          <button className={isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-900'}>
                             <FiEdit2 />
                           </button>
                           <button
                             onClick={() => handleDelete(company._id)}
-                            className="text-red-600 hover:text-red-900"
+                            className={isDark ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-900'}
                           >
                             <FiTrash2 />
                           </button>
@@ -194,6 +197,7 @@ const Companies = () => {
               </table>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

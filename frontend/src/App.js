@@ -14,10 +14,13 @@ import { logout } from "./store/authSlice";
 // Pages
 import Login from "./pages/Login";
 import RegisterMultiTenant from "./pages/RegisterMultiTenant";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Contacts from "./pages/Contacts";
 import Companies from "./pages/Companies";
 import Deals from "./pages/Deals";
+import DealsPipeline from "./pages/DealsPipeline";
 import Activities from "./pages/Activities";
 import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
@@ -124,6 +127,18 @@ function App() {
           }
         />
         <Route
+          path="/forgot-password"
+          element={
+            !isAuthenticated ? <ForgotPassword /> : <Navigate to="/" />
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            !isAuthenticated ? <ResetPassword /> : <Navigate to="/" />
+          }
+        />
+        <Route
           path="/join"
           element={
             !isAuthenticated ? <JoinViaInvitation /> : <Navigate to="/" />
@@ -207,6 +222,14 @@ function App() {
           element={
             <PrivateRoute>
               <Deals />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/pipeline"
+          element={
+            <PrivateRoute>
+              <DealsPipeline />
             </PrivateRoute>
           }
         />

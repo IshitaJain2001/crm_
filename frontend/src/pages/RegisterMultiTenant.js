@@ -21,6 +21,11 @@ const RegisterMultiTenant = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [websiteChoice, setWebsiteChoice] = useState(""); // "existing" or "builder"
   const [existingWebsite, setExistingWebsite] = useState(""); // URL for existing website
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [companySize, setCompanySize] = useState("");
+  const [country, setCountry] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Load industries on mount
   React.useEffect(() => {
@@ -99,8 +104,13 @@ const RegisterMultiTenant = () => {
     setLoading(true);
 
     try {
-      if (!fullName || !companyName || !displayName || !password) {
-        toast.error("Please fill in all fields");
+      if (!fullName || !companyName || !displayName || !password || !phoneNumber || !companySize || !country || !jobTitle) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      if (!termsAccepted) {
+        toast.error("Please accept the Terms of Service");
         return;
       }
 
@@ -128,6 +138,10 @@ const RegisterMultiTenant = () => {
           companyName,
           displayName,
           industry,
+          phoneNumber,
+          companySize,
+          country,
+          jobTitle,
           verificationToken,
         },
       );
@@ -187,7 +201,7 @@ const RegisterMultiTenant = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900"
                   placeholder="your@email.com"
                   disabled={step > 1}
                 />
@@ -456,6 +470,94 @@ const RegisterMultiTenant = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   placeholder="••••••••"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Job Title
+                </label>
+                <input
+                  type="text"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="e.g., Sales Manager"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Country
+                </label>
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                >
+                  <option value="">Select your country</option>
+                  <option value="United States">United States</option>
+                  <option value="Canada">Canada</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="India">India</option>
+                  <option value="Australia">Australia</option>
+                  <option value="Germany">Germany</option>
+                  <option value="France">France</option>
+                  <option value="Japan">Japan</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Company Size
+                </label>
+                <select
+                  value={companySize}
+                  onChange={(e) => setCompanySize(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                >
+                  <option value="">Select company size</option>
+                  <option value="1-10">1-10 employees</option>
+                  <option value="11-50">11-50 employees</option>
+                  <option value="51-200">51-200 employees</option>
+                  <option value="201-500">201-500 employees</option>
+                  <option value="501-1000">501-1,000 employees</option>
+                  <option value="1000+">1,000+ employees</option>
+                </select>
+              </div>
+
+              {/* Terms & Conditions */}
+              <div className="flex items-start gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-1"
+                />
+                <label htmlFor="terms" className="text-sm text-gray-700">
+                  I agree to the{' '}
+                  <a href="#" className="text-blue-600 hover:underline font-semibold">
+                    Terms of Service
+                  </a>
+                  {' '}and{' '}
+                  <a href="#" className="text-blue-600 hover:underline font-semibold">
+                    Privacy Policy
+                  </a>
+                </label>
               </div>
 
               <button
