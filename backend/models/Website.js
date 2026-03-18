@@ -17,37 +17,7 @@ const websiteSchema = new mongoose.Schema(
       default: "",
     },
     logo: String,
-    sections: [
-      {
-        id: String, // unique section id
-        type: String, // Allow any section type
-        title: String,
-        content: String,
-        logo: String, // For navbar
-        items: [
-          {
-            id: String,
-            type: String,
-            title: String,
-            content: String,
-            description: String,
-            icon: String,
-            image: String,
-            properties: mongoose.Schema.Types.Mixed, // Allow any properties
-          },
-        ],
-        backgroundColor: {
-          type: String,
-          default: "#ffffff",
-        },
-        textColor: {
-          type: String,
-          default: "#000000",
-        },
-        order: Number,
-        properties: mongoose.Schema.Types.Mixed, // Allow any properties
-      },
-    ],
+    sections: mongoose.Schema.Types.Mixed, // Use Mixed type for flexibility
     colors: {
       primary: {
         type: String,
@@ -97,5 +67,67 @@ const websiteSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Pre-save hook to validate and fix sections array
+websiteSchema.pre('save', function(next) {
+  console.log("=== WEBSITE PRE-SAVE HOOK ===");
+  console.log("Sections type:", typeof this.sections);
+  console.log("Sections value:", JSON.stringify(this.sections).substring(0, 200));
+  
+  if (!this.sections) {
+    console.log("Sections is null/undefined, setting to empty array");
+    this.sections = [];
+    return next();
+  }
+
+  // If sections is a string, parse it
+  if (typeof this.sections === 'string') {
+    console.warn("Sections is a STRING! Parsing...");
+    try {
+      this.sections = JSON.parse(this.sections);
+    } catch (e) {
+      console.error("Failed to parse sections string:", e.message);
+      this.sections = [];
+      return next();
+    }
+  }
+
+  // Ensure sections is an array
+  if (!Array.isArray(this.sections)) {
+    console.warn("Sections is not an array after parse:", typeof this.sections);
+    this.sections = Array.isArray(this.sections) ? this.sections : [];
+    return next();
+  }
+
+  console.log("Sections is valid array with", this.sections.length, "items");
+  
+  // Fix any stringified sections in the array
+  this.sections = this.sections.map((section, index) => {
+    if (typeof section === 'string') {
+      console.warn(`Section[${index}] is a string, attempting to parse...`);
+      try {
+        const parsed = JSON.parse(section);
+        console.log(`Section[${index}] parsed successfully`);
+        if (Array.isArray(parsed)) {
+          // If parsing a stringified array, take first element
+          console.warn(`Section[${index}] was a stringified array, using first element`);
+          return parsed[0] || { type: 'hero', content: 'Empty section' };
+        }
+        return parsed;
+      } catch (e) {
+        console.error(`Failed to parse section[${index}]:`, e.message);
+        return { type: 'error', content: 'Invalid section' };
+      }
+    }
+    if (typeof section !== 'object' || section === null) {
+      console.warn(`Section[${index}] is invalid type:`, typeof section);
+      return { type: 'error', content: 'Invalid section' };
+    }
+    return section;
+  });
+
+  console.log("After validation, sections count:", this.sections.length);
+  next();
+});
 
 module.exports = mongoose.model("Website", websiteSchema);

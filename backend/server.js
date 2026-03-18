@@ -20,8 +20,29 @@ app.use(cors({
 }));
 
 // Increase body size limit for website builder (large JSON payloads)
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ 
+  limit: '50mb',
+  // Prevent accidental stringification of nested objects
+  strict: true
+}));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Debug middleware to log incoming request bodies for website-builder
+app.use((req, res, next) => {
+  if (req.path.includes('register-company') || req.path.includes('website-builder')) {
+    if (req.body && req.body.sections) {
+      console.log("DEBUG: Request body sections:", {
+        type: typeof req.body.sections,
+        isArray: Array.isArray(req.body.sections),
+        length: Array.isArray(req.body.sections) ? req.body.sections.length : 'N/A',
+        firstElement: Array.isArray(req.body.sections) && req.body.sections.length > 0 
+          ? { type: typeof req.body.sections[0], value: JSON.stringify(req.body.sections[0]).substring(0, 100) }
+          : 'N/A'
+      });
+    }
+  }
+  next();
+});
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/crm', {

@@ -38,8 +38,8 @@ const companySchema = new mongoose.Schema({
 
   industry: {
     type: String,
-    enum: ['edtech', 'consulting', 'realEstate', 'insurance', 'saas', 'ecommerce', 'manufacturing', 'healthcare', 'finance', 'generic'],
     default: 'generic'
+    // Allows any custom industry value, not restricted to enum
   },
   
   maxUsers: {

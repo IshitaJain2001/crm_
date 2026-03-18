@@ -172,6 +172,190 @@ const industryConfigs = {
       claim: 'Claim Filed → Assessment → Approval → Payment → Closed',
       renewal: 'Policy Due → Reminder → Quote → Accepted → Renewed'
     }
+  },
+
+  healthcare: {
+    name: 'Healthcare',
+    description: 'Healthcare Services & Patient Management',
+    color: '#FF6B9D',
+    features: {
+      contacts: { enabled: true, label: 'Patients' },
+      companies: { enabled: true, label: 'Hospitals/Clinics' },
+      deals: { enabled: true, label: 'Treatments' },
+      activities: { enabled: true, label: 'Appointments' },
+      tasks: { enabled: true, label: 'Follow-ups' },
+      emails: { enabled: true, label: 'Patient Communication' },
+      meetings: { enabled: true, label: 'Consultations' },
+      forms: { enabled: true, label: 'Patient Forms' },
+      chatbots: { enabled: true, label: 'Patient Support Bot' }
+    },
+    fieldMappings: {
+      contact: 'Patient',
+      company: 'Healthcare Provider',
+      deal: 'Treatment',
+      activity: 'Appointment',
+      task: 'Follow-up'
+    },
+    defaultFields: {
+      contacts: ['name', 'email', 'phone', 'dateOfBirth', 'medicalHistory'],
+      companies: ['name', 'specialization', 'address', 'phone', 'website'],
+      deals: ['treatmentType', 'patient', 'status', 'startDate', 'endDate']
+    },
+    dashboardWidgets: ['appointmentSchedule', 'patientWaitlist', 'treatmentProgress'],
+    workflows: {
+      treatment: 'Inquiry → Consultation → Treatment Plan → Treatment → Follow-up'
+    }
+  },
+
+  ecommerce: {
+    name: 'E-Commerce',
+    description: 'Online Retail & E-Commerce Management',
+    color: '#FFA502',
+    features: {
+      contacts: { enabled: true, label: 'Customers' },
+      companies: { enabled: true, label: 'Vendors/Suppliers' },
+      deals: { enabled: true, label: 'Orders' },
+      activities: { enabled: true, label: 'Purchases' },
+      tasks: { enabled: true, label: 'Fulfillment' },
+      emails: { enabled: true, label: 'Order Communication' },
+      forms: { enabled: true, label: 'Product Review Forms' }
+    },
+    fieldMappings: {
+      contact: 'Customer',
+      company: 'Vendor/Supplier',
+      deal: 'Order',
+      activity: 'Purchase',
+      task: 'Fulfillment'
+    },
+    defaultFields: {
+      contacts: ['name', 'email', 'phone', 'address', 'loyaltyStatus'],
+      companies: ['name', 'productCategory', 'address', 'phone', 'contractTerms'],
+      deals: ['orderNumber', 'totalAmount', 'status', 'orderDate', 'deliveryDate']
+    },
+    dashboardWidgets: ['orderTrend', 'revenueForecast', 'inventoryStatus'],
+    workflows: {
+      order: 'Browse → Add to Cart → Checkout → Payment → Fulfillment → Delivery → Review'
+    }
+  },
+
+  saas: {
+    name: 'SaaS',
+    description: 'Software as a Service',
+    color: '#6C5CE7',
+    features: {
+      contacts: { enabled: true, label: 'Users/Customers' },
+      companies: { enabled: true, label: 'Accounts' },
+      deals: { enabled: true, label: 'Subscriptions' },
+      activities: { enabled: true, label: 'Login Activity' },
+      tasks: { enabled: true, label: 'Support Tickets' },
+      emails: { enabled: true, label: 'User Communication' }
+    },
+    fieldMappings: {
+      contact: 'User',
+      company: 'Account',
+      deal: 'Subscription',
+      activity: 'Usage',
+      task: 'Support Ticket'
+    },
+    defaultFields: {
+      contacts: ['name', 'email', 'phone', 'accountId', 'subscriptionPlan'],
+      companies: ['name', 'website', 'numberOfUsers', 'industry'],
+      deals: ['planType', 'monthlyRecurring', 'startDate', 'renewalDate', 'status']
+    },
+    dashboardWidgets: ['activeSubs', 'churnRate', 'mrr', 'usageMetrics'],
+    workflows: {
+      customer: 'Signup → Trial → Upgrade → Active → Renewal/Churn'
+    }
+  },
+
+  hospitality: {
+    name: 'Hospitality',
+    description: 'Hotels, Restaurants & Event Management',
+    color: '#00B8A9',
+    features: {
+      contacts: { enabled: true, label: 'Guests/Customers' },
+      companies: { enabled: true, label: 'Venues/Suppliers' },
+      deals: { enabled: true, label: 'Bookings' },
+      activities: { enabled: true, label: 'Events' },
+      tasks: { enabled: true, label: 'Operations' },
+      emails: { enabled: true, label: 'Guest Communication' }
+    },
+    fieldMappings: {
+      contact: 'Guest',
+      company: 'Venue/Supplier',
+      deal: 'Booking',
+      activity: 'Event',
+      task: 'Operation'
+    },
+    defaultFields: {
+      contacts: ['name', 'email', 'phone', 'preferences', 'loyaltyPoints'],
+      companies: ['name', 'type', 'address', 'phone', 'capacity'],
+      deals: ['bookingDate', 'checkInDate', 'checkOutDate', 'amount', 'status']
+    },
+    dashboardWidgets: ['occupancyRate', 'upcomingBookings', 'revenue'],
+    workflows: {
+      booking: 'Inquiry → Reservation → Confirmation → Check-in → Stay → Check-out → Billing'
+    }
+  },
+
+  manufacturing: {
+    name: 'Manufacturing',
+    description: 'Manufacturing & Production Management',
+    color: '#F72585',
+    features: {
+      contacts: { enabled: true, label: 'Suppliers/Buyers' },
+      companies: { enabled: true, label: 'Partners' },
+      deals: { enabled: true, label: 'Orders' },
+      activities: { enabled: true, label: 'Production' },
+      tasks: { enabled: true, label: 'Quality Control' },
+      emails: { enabled: true, label: 'Communication' }
+    },
+    fieldMappings: {
+      contact: 'Supplier/Buyer',
+      company: 'Partner',
+      deal: 'Order',
+      activity: 'Production',
+      task: 'QC Task'
+    },
+    defaultFields: {
+      contacts: ['name', 'email', 'phone', 'company', 'designation'],
+      companies: ['name', 'type', 'address', 'phone', 'productCategory'],
+      deals: ['productName', 'quantity', 'dueDate', 'amount', 'status']
+    },
+    dashboardWidgets: ['productionSchedule', 'qualityMetrics', 'supplierPerformance'],
+    workflows: {
+      production: 'Order → Planning → Procurement → Manufacturing → QC → Delivery'
+    }
+  },
+
+  nonprofit: {
+    name: 'Non-Profit',
+    description: 'Non-Profit Organizations & Fundraising',
+    color: '#D62828',
+    features: {
+      contacts: { enabled: true, label: 'Donors/Volunteers' },
+      companies: { enabled: true, label: 'Partners' },
+      deals: { enabled: true, label: 'Donations' },
+      activities: { enabled: true, label: 'Events' },
+      tasks: { enabled: true, label: 'Campaigns' },
+      emails: { enabled: true, label: 'Outreach' }
+    },
+    fieldMappings: {
+      contact: 'Donor/Volunteer',
+      company: 'Partner Organization',
+      deal: 'Donation',
+      activity: 'Event',
+      task: 'Campaign'
+    },
+    defaultFields: {
+      contacts: ['name', 'email', 'phone', 'donationAmount', 'volunteerHours'],
+      companies: ['name', 'type', 'address', 'phone', 'website'],
+      deals: ['donationAmount', 'donationDate', 'fund', 'status']
+    },
+    dashboardWidgets: ['donationMetrics', 'eventAttendance', 'volunteerHours'],
+    workflows: {
+      fundraising: 'Campaign → Outreach → Donation → Thank You → Impact Report'
+    }
   }
 };
 

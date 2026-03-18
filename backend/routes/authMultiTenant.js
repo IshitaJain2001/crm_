@@ -201,22 +201,38 @@ router.post("/register-company", async (req, res) => {
 
     // CREATE DEFAULT WEBSITE
     console.log("Creating default website...");
+    
+    const sectionData = {
+      id: `hero-${Date.now()}`,
+      type: "hero",
+      title: `Welcome to ${company.name}`,
+      content: "Your company description goes here",
+      order: 1,
+      backgroundColor: "#3b82f6",
+      textColor: "#ffffff",
+      items: [],
+    };
+    
+    console.log("Section data being created:", JSON.stringify(sectionData));
+    console.log("Section data type:", typeof sectionData);
+    
+    // Ensure sections array is correct
+    let sectionsArray = [sectionData];
+    if (typeof sectionsArray[0] === 'string') {
+      console.warn("WARNING: Section is stringified! Parsing...");
+      try {
+        sectionsArray[0] = JSON.parse(sectionsArray[0]);
+      } catch (e) {
+        console.error("Could not parse section:", e.message);
+        sectionsArray = [sectionData];
+      }
+    }
+    
     const defaultWebsite = new Website({
       company: company._id,
       title: company.name,
       description: `Welcome to ${company.name}`,
-      sections: [
-        {
-          id: `hero-${Date.now()}`,
-          type: "hero",
-          title: `Welcome to ${company.name}`,
-          content: "Your company description goes here",
-          order: 1,
-          backgroundColor: "#3b82f6",
-          textColor: "#ffffff",
-          items: [],
-        },
-      ],
+      sections: sectionsArray,
       colors: {
         primary: "#3b82f6",
         secondary: "#10b981",
@@ -225,9 +241,51 @@ router.post("/register-company", async (req, res) => {
       isPublished: false,
     });
 
-    await defaultWebsite.save();
-    console.log("✓✓✓ DEFAULT WEBSITE CREATED ✓✓✓");
-    console.log("Website ID:", defaultWebsite._id.toString());
+    console.log("Website object before save:", {
+      sections: defaultWebsite.sections,
+      sectionsType: typeof defaultWebsite.sections,
+      sectionsIsArray: Array.isArray(defaultWebsite.sections),
+      sectionsLength: defaultWebsite.sections.length,
+      firstSectionType: defaultWebsite.sections.length > 0 ? typeof defaultWebsite.sections[0] : 'N/A',
+      firstSectionValue: defaultWebsite.sections.length > 0 ? JSON.stringify(defaultWebsite.sections[0]).substring(0, 100) : 'N/A',
+    });
+
+    try {
+      await defaultWebsite.save();
+      console.log("✓✓✓ DEFAULT WEBSITE CREATED ✓✓✓");
+      console.log("Website ID:", defaultWebsite._id.toString());
+    } catch (websiteError) {
+      console.error("❌ Website save error:", websiteError.message);
+      console.error("Full error:", websiteError);
+      
+      // If save fails due to sections validation, try direct insert
+      if (websiteError.name === 'ValidationError' && websiteError.message.includes('sections')) {
+        console.log("Attempting direct insert without validation...");
+        try {
+          const result = await Website.collection.insertOne({
+            company: company._id,
+            title: company.name,
+            description: `Welcome to ${company.name}`,
+            sections: [sectionData],
+            colors: {
+              primary: "#3b82f6",
+              secondary: "#10b981",
+              accent: "#f59e0b",
+            },
+            isPublished: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          console.log("✓✓✓ DEFAULT WEBSITE CREATED (Direct Insert) ✓✓✓");
+          console.log("Website ID:", result.insertedId.toString());
+        } catch (insertError) {
+          console.error("Direct insert also failed:", insertError.message);
+          throw insertError;
+        }
+      } else {
+        throw websiteError;
+      }
+    }
 
     if (!user.company) {
       console.error("❌ CRITICAL: User company reference not set");
@@ -473,6 +531,126 @@ router.post("/accept-invitation/:token", async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// Google Sign In (Login or Auto-Register)
+// ============================================================
+router.post("/google-login", async (req, res) => {
+  try {
+    const { idToken, email, displayName } = req.body;
+
+    if (!idToken || !email) {
+      return res.status(400).json({ error: "ID token and email are required" });
+    }
+
+    // Check if user exists
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (user) {
+      // User already exists, just login
+      const loginToken = jwt.sign(
+        {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          company: user.company,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRE || "7d" },
+      );
+
+      const company = await Company.findById(user.company);
+
+      return res.json({
+        message: "Login successful",
+        token: loginToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          company: user.company,
+        },
+        company: {
+          id: company._id,
+          name: company.name,
+          displayName: company.displayName,
+        },
+      });
+    }
+
+    // User doesn't exist - auto-create account
+    // First check if they have an active invitation
+    const invitation = await Invitation.findOne({
+      email: email.toLowerCase(),
+      status: "pending",
+    }).populate("company");
+
+    if (invitation && invitation.expiresAt > new Date()) {
+      // Accept invitation and create user
+      const newUser = new User({
+        name: displayName || email.split("@")[0],
+        email: email.toLowerCase(),
+        password: null, // Google auth - no password
+        company: invitation.company._id,
+        role: invitation.role,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        googleAuth: true,
+        invitationToken: invitation._id,
+      });
+
+      await newUser.save();
+
+      // Add to company members
+      invitation.company.members.push(newUser._id);
+      await invitation.company.save();
+
+      // Mark invitation as accepted
+      invitation.status = "accepted";
+      invitation.acceptedBy = newUser._id;
+      invitation.acceptedAt = new Date();
+      await invitation.save();
+
+      const loginToken = jwt.sign(
+        {
+          id: newUser._id,
+          email: newUser.email,
+          role: newUser.role,
+          company: invitation.company._id,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRE || "7d" },
+      );
+
+      return res.json({
+        message: `Welcome to ${invitation.company.displayName}!`,
+        token: loginToken,
+        user: {
+          id: newUser._id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          company: invitation.company._id,
+        },
+        company: {
+          id: invitation.company._id,
+          name: invitation.company.name,
+          displayName: invitation.company.displayName,
+        },
+      });
+    }
+
+    // No invitation found - return that they need to sign up
+    return res.status(400).json({
+      error: "No account found. Please sign up first or check your invitation email.",
+      code: "NO_ACCOUNT_OR_INVITATION",
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 

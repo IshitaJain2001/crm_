@@ -423,11 +423,11 @@ const WebsiteBuilder = () => {
       const keysToRemove = [
         "websiteBuilderTourShown", // Not needed
       ];
-      
-      keysToRemove.forEach(key => {
+
+      keysToRemove.forEach((key) => {
         localStorage.removeItem(key);
       });
-      
+
       console.log("✓ Cleaned localStorage");
     } catch (e) {
       console.log("Cleanup error:", e.message);
@@ -438,27 +438,48 @@ const WebsiteBuilder = () => {
   const initializeWebsite = async () => {
     try {
       console.log("=== INIT START ===");
-      
+
       // Clean up old data first
       cleanupLocalStorage();
-      
+
       // Restore preview state
-      const savedPreviewState = localStorage.getItem("websiteBuilderPreviewMode");
+      const savedPreviewState = localStorage.getItem(
+        "websiteBuilderPreviewMode",
+      );
       if (savedPreviewState === "true") {
         setShowPreview(true);
       }
 
       // Load from localStorage (instant)
       const cached = localStorage.getItem("websiteBuilderData");
-      console.log("LocalStorage data:", cached ? "EXISTS (" + (cached.length / 1024).toFixed(2) + "KB)" : "NOT FOUND");
-      
+      console.log(
+        "LocalStorage data:",
+        cached
+          ? "EXISTS (" + (cached.length / 1024).toFixed(2) + "KB)"
+          : "NOT FOUND",
+      );
+
       if (cached) {
         try {
           const websiteData = JSON.parse(cached);
           console.log("✓ Parsed localStorage:", {
             title: websiteData.title,
             sections: websiteData.sections?.length || 0,
+            sectionsType: typeof websiteData.sections,
           });
+
+          // Sanitize sections from localStorage
+          if (typeof websiteData.sections === "string") {
+            try {
+              websiteData.sections = JSON.parse(websiteData.sections);
+            } catch {
+              websiteData.sections = [];
+            }
+          }
+          if (!Array.isArray(websiteData.sections)) {
+            websiteData.sections = [];
+          }
+
           setWebsite(websiteData);
           setLoading(false);
 
@@ -491,9 +512,22 @@ const WebsiteBuilder = () => {
       );
 
       if (response.data?._id) {
-        setWebsite(response.data);
-        localStorage.setItem("websiteBuilderData", JSON.stringify(response.data));
-        console.log("✓ Loaded from backend:", response.data.title);
+        // Ensure sections is an array, not stringified
+        let websiteData = response.data;
+        if (typeof websiteData.sections === "string") {
+          try {
+            websiteData.sections = JSON.parse(websiteData.sections);
+          } catch {
+            websiteData.sections = [];
+          }
+        }
+        if (!Array.isArray(websiteData.sections)) {
+          websiteData.sections = [];
+        }
+
+        setWebsite(websiteData);
+        localStorage.setItem("websiteBuilderData", JSON.stringify(websiteData));
+        console.log("✓ Loaded from backend:", websiteData.title);
         setLastSyncTime(new Date());
         return true;
       }
@@ -543,16 +577,24 @@ const WebsiteBuilder = () => {
       const jsonString = JSON.stringify(website);
       localStorage.setItem("websiteBuilderData", jsonString);
       setSyncStatus("ready");
-      console.log("✓ Saved to localStorage:", website.sections?.length, "sections, size:", (jsonString.length / 1024).toFixed(2), "KB");
+      console.log(
+        "✓ Saved to localStorage:",
+        website.sections?.length,
+        "sections, size:",
+        (jsonString.length / 1024).toFixed(2),
+        "KB",
+      );
     } catch (error) {
       console.error("LocalStorage error:", error.name);
-      
+
       if (error.name === "QuotaExceededError") {
         // Storage full - clear old cache and try again
         try {
           localStorage.clear(); // Nuclear option
           localStorage.setItem("websiteBuilderData", JSON.stringify(website));
-          toast.error("Storage was full, cleared cache. Data saved.", { duration: 2000 });
+          toast.error("Storage was full, cleared cache. Data saved.", {
+            duration: 2000,
+          });
           console.log("✓ Cleared storage and saved");
         } catch (e) {
           toast.error("Cannot save - storage full", { duration: 2000 });
@@ -573,15 +615,26 @@ const WebsiteBuilder = () => {
     return () => clearTimeout(timer);
   }, [website]);
 
-
-
   const handleTemplateSelect = (templateKey) => {
     const template = WEBSITE_TEMPLATES[templateKey];
+    console.log("Template selected:", templateKey);
+    console.log("Template sections before copy:", template.sections);
+
+    // Deep copy sections to prevent accidental mutation/stringification
+    let sectionsCopy;
+    try {
+      sectionsCopy = JSON.parse(JSON.stringify(template.sections));
+      console.log("Deep copy successful, sectionsCopy:", sectionsCopy);
+    } catch (e) {
+      console.error("Failed to deep copy sections:", e);
+      sectionsCopy = template.sections;
+    }
+
     const newWebsite = {
       _id: "new",
       title: `${template.name} Website`,
       description: `Welcome to my ${template.name} website`,
-      sections: template.sections,
+      sections: sectionsCopy,
       colors: {
         primary: "#3b82f6",
         secondary: "#10b981",
@@ -589,6 +642,7 @@ const WebsiteBuilder = () => {
       },
       isPublished: false,
     };
+    console.log("New website created with sections:", newWebsite.sections);
     setWebsite(newWebsite);
     setShowOnboarding(false);
 
@@ -608,12 +662,54 @@ const WebsiteBuilder = () => {
   const syncToBackend = async () => {
     try {
       setSyncStatus("saving");
-      
+
       // Only sync essential data to backend (keep localStorage for full data)
+      let sections = website.sections;
+
+      console.log("=== SYNC DEBUG ===");
+      console.log("Raw sections from website state:", sections);
+      console.log("Sections type:", typeof sections);
+      console.log("Is array?", Array.isArray(sections));
+      if (Array.isArray(sections) && sections.length > 0) {
+        console.log("First section:", sections[0]);
+        console.log("First section type:", typeof sections[0]);
+      }
+
+      // Ensure sections is an array and not stringified
+      if (typeof sections === "string") {
+        try {
+          sections = JSON.parse(sections);
+        } catch {
+          sections = [];
+        }
+      }
+      if (!Array.isArray(sections)) {
+        sections = [];
+      }
+
+      // Additional safety: ensure no section is stringified
+      sections = sections.map((section, idx) => {
+        if (typeof section === "string") {
+          console.warn(`Section ${idx} is stringified, attempting to parse...`);
+          try {
+            return JSON.parse(section);
+          } catch (e) {
+            console.error(`Failed to parse section ${idx}:`, e);
+            return { type: "error", content: "Invalid section" };
+          }
+        }
+        // Ensure it's an object with required fields
+        if (typeof section !== "object" || section === null) {
+          console.warn(`Section ${idx} is not an object:`, typeof section);
+          return { type: "error", content: "Invalid section type" };
+        }
+        return section;
+      });
+
       const syncData = {
         title: String(website.title || "Untitled"),
         description: String(website.description || ""),
-        sections: Array.isArray(website.sections) ? website.sections : [],
+        sections: sections,
         colors: website.colors || {
           primary: "#3b82f6",
           secondary: "#10b981",
@@ -625,13 +721,18 @@ const WebsiteBuilder = () => {
       console.log("Syncing:", {
         size: (JSON.stringify(syncData).length / 1024).toFixed(2) + "KB",
         sections: syncData.sections.length,
+        sectionsType: typeof syncData.sections,
+        firstSectionType: typeof syncData.sections[0],
       });
-      
+
       const response = await axios.put(
         `${API_URL}/api/website-builder/update-full`,
         syncData,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           timeout: 10000,
         },
       );
@@ -639,7 +740,11 @@ const WebsiteBuilder = () => {
       if (response.data?.sections?.length === website.sections?.length) {
         setSyncStatus("saved");
         setLastSyncTime(new Date());
-        console.log("✓ Synced to MongoDB:", response.data.sections?.length, "sections");
+        console.log(
+          "✓ Synced to MongoDB:",
+          response.data.sections?.length,
+          "sections",
+        );
       } else {
         console.warn("Sync mismatch, keeping localStorage");
         setSyncStatus("ready");
@@ -669,16 +774,17 @@ const WebsiteBuilder = () => {
   const generateReactCode = () => {
     return generateModularCode(website);
 
-    const navbarSection = website.sections?.find(s => s.type === "navbar");
-    const otherSections = website.sections?.filter(s => s.type !== "navbar") || [];
-    
+    const navbarSection = website.sections?.find((s) => s.type === "navbar");
+    const otherSections =
+      website.sections?.filter((s) => s.type !== "navbar") || [];
+
     const files = {}; // Will store {filename: content}
 
     // Generate Navbar Code
     let navbarCode = "";
     if (navbarSection) {
       const navLinks = (navbarSection.items || [])
-        .map(item => {
+        .map((item) => {
           const style = item.properties || {};
           return `<a 
                   href="#" 
@@ -695,7 +801,7 @@ const WebsiteBuilder = () => {
         .join("\n          ");
 
       // Add logo if it exists
-      const logoHTML = navbarSection.logo 
+      const logoHTML = navbarSection.logo
         ? `<img 
           src="${navbarSection.logo}" 
           alt="Logo" 
@@ -729,12 +835,12 @@ const WebsiteBuilder = () => {
     let sectionsCode = "";
     if (otherSections.length > 0) {
       const sections = otherSections
-        .map(section => {
+        .map((section) => {
           let itemsHTML = "";
-          
+
           if (section.items && section.items.length > 0) {
             itemsHTML = section.items
-              .map(item => {
+              .map((item) => {
                 const props = item.properties || {};
                 const style = {
                   fontSize: props.fontSize || 16,
@@ -816,7 +922,8 @@ const WebsiteBuilder = () => {
       sectionsCode = sections;
     }
 
-    const componentName = website.title?.replace(/[^a-zA-Z0-9]/g, "") || "Website";
+    const componentName =
+      website.title?.replace(/[^a-zA-Z0-9]/g, "") || "Website";
 
     // Generate CSS for the component
     const cssCode = `/* Auto-generated CSS */
@@ -988,7 +1095,7 @@ export default function ${componentName}() {
     const result = {
       jsx: fullCode,
       css: cssCode,
-      combined: `/* ===== CSS FILE: ${componentName}.css ===== */\n${cssCode}\n\n/* ===== JSX FILE: ${componentName}.jsx ===== */\n${fullCode}`
+      combined: `/* ===== CSS FILE: ${componentName}.css ===== */\n${cssCode}\n\n/* ===== JSX FILE: ${componentName}.jsx ===== */\n${fullCode}`,
     };
 
     return result.combined;
@@ -1140,9 +1247,14 @@ export default function ${componentName}() {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-white">
-            <h2 className="text-2xl font-bold text-gray-800">📄 Export Modular React Code</h2>
+            <h2 className="text-2xl font-bold text-gray-800">
+              📄 Export Modular React Code
+            </h2>
             <button
-              onClick={() => { setShowCodeExport(false); setSelectedFile(null); }}
+              onClick={() => {
+                setShowCodeExport(false);
+                setSelectedFile(null);
+              }}
               className="text-2xl text-gray-600 hover:text-gray-800"
             >
               ✕
@@ -1151,7 +1263,7 @@ export default function ${componentName}() {
 
           {/* File Tabs */}
           <div className="flex gap-1 px-4 py-2 overflow-x-auto border-b border-gray-300 bg-gray-50 flex-shrink-0">
-            {fileNames.map(file => (
+            {fileNames.map((file) => (
               <button
                 key={file}
                 onClick={() => setSelectedFile(file)}
@@ -1188,7 +1300,7 @@ export default function ${componentName}() {
             <button
               onClick={() => {
                 // Download all files as separate files
-                fileNames.forEach(file => {
+                fileNames.forEach((file) => {
                   const element = document.createElement("a");
                   const blob = new Blob([files[file]], { type: "text/plain" });
                   element.href = URL.createObjectURL(blob);
@@ -1205,7 +1317,8 @@ export default function ${componentName}() {
               Download All
             </button>
             <p className="text-sm text-gray-600 ml-auto my-auto">
-              📦 {fileNames.length} files • Copy each file individually or download all
+              📦 {fileNames.length} files • Copy each file individually or
+              download all
             </p>
           </div>
         </div>
@@ -1221,9 +1334,9 @@ export default function ${componentName}() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       {/* Top Header */}
-      <div className="bg-gray-900 text-white px-6 py-3 flex justify-between items-center shadow-lg">
+      <div className="bg-gray-900 dark:bg-gray-950 text-white px-6 py-3 flex justify-between items-center shadow-lg">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold">🌐 Website Builder</h1>
           <div className="text-xs px-2 py-1 rounded">
@@ -1273,7 +1386,10 @@ export default function ${componentName}() {
             onClick={() => {
               const newPreviewState = !showPreview;
               setShowPreview(newPreviewState);
-              localStorage.setItem("websiteBuilderPreviewMode", String(newPreviewState));
+              localStorage.setItem(
+                "websiteBuilderPreviewMode",
+                String(newPreviewState),
+              );
             }}
             className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg transition font-semibold whitespace-nowrap"
             title={showPreview ? "Back to editor" : "Preview website"}
@@ -1317,12 +1433,15 @@ export default function ${componentName}() {
             </button>
 
             {/* Preview Content */}
-            <div className="flex-1 overflow-y-auto bg-white">
+            <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
               {/* Route Indicator */}
               {currentRoute !== "/" && (
                 <div className="sticky top-0 z-40 bg-blue-100 border-b-2 border-blue-500 px-4 py-2">
                   <p className="text-sm font-semibold text-blue-800">
-                    📍 Current Route: <code className="bg-blue-200 px-2 py-1 rounded">{currentRoute}</code>
+                    📍 Current Route:{" "}
+                    <code className="bg-blue-200 px-2 py-1 rounded">
+                      {currentRoute}
+                    </code>
                     <button
                       onClick={() => setCurrentRoute("/")}
                       className="ml-3 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
@@ -1332,24 +1451,33 @@ export default function ${componentName}() {
                   </p>
                 </div>
               )}
-              
+
               {console.log("PREVIEW DEBUG:", {
                 hasWebsite: !!website,
                 title: website?.title,
                 sectionsLength: website?.sections?.length,
-                sections: website?.sections?.map(s => ({ type: s.type, id: s.id })),
+                sections: website?.sections?.map((s) => ({
+                  type: s.type,
+                  id: s.id,
+                })),
                 currentRoute,
               })}
               {website?.sections && website.sections.length > 0 ? (
                 (() => {
                   // Separate navbar and other sections
-                  const navbarSection = website.sections.find(s => s.type === "navbar");
-                  const otherSections = website.sections.filter(s => s.type !== "navbar");
-                  
+                  const navbarSection = website.sections.find(
+                    (s) => s.type === "navbar",
+                  );
+                  const otherSections = website.sections.filter(
+                    (s) => s.type !== "navbar",
+                  );
+
                   // Render navbar first, then other sections
                   const sectionsToRender = [
                     ...(navbarSection ? [navbarSection] : []),
-                    ...otherSections.sort((a, b) => (a.order || 0) - (b.order || 0))
+                    ...otherSections.sort(
+                      (a, b) => (a.order || 0) - (b.order || 0),
+                    ),
                   ];
 
                   return sectionsToRender.map((section) => {
@@ -1360,7 +1488,8 @@ export default function ${componentName}() {
                         <nav
                           key={section.id}
                           style={{
-                            backgroundColor: section.backgroundColor || "#ffffff",
+                            backgroundColor:
+                              section.backgroundColor || "#ffffff",
                             color: section.textColor || "#000000",
                           }}
                           className="sticky top-0 shadow-md"
@@ -1376,7 +1505,7 @@ export default function ${componentName}() {
                                     overflow: "hidden",
                                     opacity: section.logoOpacity || 1,
                                     boxShadow: section.logoShadow || "none",
-                                    border: section.logoBorder 
+                                    border: section.logoBorder
                                       ? `${section.logoBorder}px solid ${section.logoBorderColor || "#000000"}`
                                       : "none",
                                     display: "flex",
@@ -1404,34 +1533,39 @@ export default function ${componentName}() {
                               </h1>
                             </div>
                             <div className="flex gap-6">
-                               {section.items?.map((item) => (
-                                 <button
-                                   key={item.id}
-                                   onClick={() => {
-                                     const href = item.href || "/";
-                                     if (item.linkType === "internal") {
-                                       setCurrentRoute(href);
-                                       toast.success(`Route: ${href}`);
-                                     } else if (item.linkType === "anchor") {
-                                       // Scroll to anchor
-                                       const id = href.replace("#", "");
-                                       const element = document.getElementById(id);
-                                       if (element) {
-                                         element.scrollIntoView({ behavior: "smooth" });
-                                       }
-                                     } else {
-                                       // External link
-                                       window.open(
-                                         href,
-                                         item.target === "_blank" ? "_blank" : "_self"
-                                       );
-                                     }
-                                   }}
-                                   className="hover:opacity-75 transition bg-none border-none cursor-pointer text-inherit p-0"
-                                 >
-                                   {item.content}
-                                 </button>
-                               ))}
+                              {section.items?.map((item) => (
+                                <button
+                                  key={item.id}
+                                  onClick={() => {
+                                    const href = item.href || "/";
+                                    if (item.linkType === "internal") {
+                                      setCurrentRoute(href);
+                                      toast.success(`Route: ${href}`);
+                                    } else if (item.linkType === "anchor") {
+                                      // Scroll to anchor
+                                      const id = href.replace("#", "");
+                                      const element =
+                                        document.getElementById(id);
+                                      if (element) {
+                                        element.scrollIntoView({
+                                          behavior: "smooth",
+                                        });
+                                      }
+                                    } else {
+                                      // External link
+                                      window.open(
+                                        href,
+                                        item.target === "_blank"
+                                          ? "_blank"
+                                          : "_self",
+                                      );
+                                    }
+                                  }}
+                                  className="hover:opacity-75 transition bg-none border-none cursor-pointer text-inherit p-0"
+                                >
+                                  {item.content}
+                                </button>
+                              ))}
                             </div>
                           </div>
                         </nav>
@@ -1472,7 +1606,9 @@ export default function ${componentName}() {
                                   style={item.properties}
                                   className="rounded-lg p-6"
                                 >
-                                  <p className="font-semibold">{item.content}</p>
+                                  <p className="font-semibold">
+                                    {item.content}
+                                  </p>
                                 </div>
                               ))}
                             </div>
@@ -1492,9 +1628,9 @@ export default function ${componentName}() {
         ) : (
           <>
             {/* Left Sidebar - Elements Panel */}
-            <div className="w-64 bg-white shadow-lg overflow-y-auto elements-panel">
-              <div className="p-4 border-b">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">
+            <div className="w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto elements-panel border-r border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
                   Elements
                 </h2>
                 <div className="space-y-2 element-types">
@@ -1522,9 +1658,11 @@ export default function ${componentName}() {
               </div>
 
               {/* Sections List */}
-              <div className="p-4 border-b sections-list">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 sections-list">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold text-gray-700">Sections</h3>
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-200">
+                    Sections
+                  </h3>
                   <button
                     onClick={() => setShowAddSection(true)}
                     className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-bold transition"
@@ -1548,7 +1686,7 @@ export default function ${componentName}() {
                         className={`p-3 rounded cursor-pointer transition ${
                           selectedElement?.sectionId === section.id
                             ? "bg-blue-500 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                         }`}
                       >
                         <p className="font-medium capitalize">{section.type}</p>
@@ -1562,7 +1700,7 @@ export default function ${componentName}() {
             </div>
 
             {/* Center - Canvas */}
-            <div className="flex-1 overflow-y-auto p-6 canvas-area">
+            <div className="flex-1 overflow-y-auto p-6 canvas-area bg-gray-50 dark:bg-gray-900">
               {/* Navbar Preview - Always Show */}
               {(() => {
                 const navbarSection = website.sections.find(
@@ -1819,7 +1957,7 @@ export default function ${componentName}() {
                 )}
 
                 {!currentSection && (
-                  <div className="bg-white rounded-lg shadow-lg p-12 text-center text-gray-500">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-12 text-center text-gray-500 dark:text-gray-400">
                     Select a section from the left panel to edit
                   </div>
                 )}
@@ -1827,18 +1965,18 @@ export default function ${componentName}() {
             </div>
 
             {/* Right Sidebar - Properties Panel */}
-            <div className="w-80 bg-white shadow-lg overflow-y-auto border-l properties-panel">
+            <div className="w-80 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto border-l border-gray-200 dark:border-gray-700 properties-panel">
               {currentSection?.type === "navbar" && !currentElement ? (
                 <div className="p-6 space-y-6">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
                       Navbar Properties
                     </h3>
                   </div>
 
                   {/* Logo Image */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Logo Image
                     </label>
                     <div className="space-y-3">
@@ -1895,13 +2033,13 @@ export default function ${componentName}() {
                   {/* Logo Styling */}
                   {currentSection.logo && (
                     <div>
-                      <h4 className="font-semibold text-gray-700 mb-3">
+                      <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         ✨ Logo Styling
                       </h4>
                       <div className="space-y-3">
                         {/* Logo Width */}
                         <div>
-                          <label className="text-xs text-gray-600">
+                          <label className="text-xs text-gray-600 dark:text-gray-400">
                             Logo Width
                           </label>
                           <input
@@ -1916,14 +2054,14 @@ export default function ${componentName}() {
                             }
                             className="w-full"
                           />
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {currentSection.logoWidth || 40}px
                           </span>
                         </div>
 
                         {/* Logo Height */}
                         <div>
-                          <label className="text-xs text-gray-600">
+                          <label className="text-xs text-gray-600 dark:text-gray-400">
                             Logo Height
                           </label>
                           <input
@@ -1938,14 +2076,14 @@ export default function ${componentName}() {
                             }
                             className="w-full"
                           />
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {currentSection.logoHeight || 40}px
                           </span>
                         </div>
 
                         {/* Logo Border Radius */}
                         <div>
-                          <label className="text-xs text-gray-600">
+                          <label className="text-xs text-gray-600 dark:text-gray-400">
                             Border Radius
                           </label>
                           <div className="flex gap-2 mb-2">
@@ -1995,9 +2133,10 @@ export default function ${componentName}() {
                             className="w-full"
                           />
                           <span className="text-xs text-gray-500">
-                            {(
-                              (currentSection.logoOpacity || 1) * 100
-                            ).toFixed(0)}%
+                            {((currentSection.logoOpacity || 1) * 100).toFixed(
+                              0,
+                            )}
+                            %
                           </span>
                         </div>
 
@@ -2059,8 +2198,7 @@ export default function ${componentName}() {
                               <input
                                 type="color"
                                 value={
-                                  currentSection.logoBorderColor ||
-                                  "#000000"
+                                  currentSection.logoBorderColor || "#000000"
                                 }
                                 onChange={(e) =>
                                   updateSectionContent(currentSection.id, {
@@ -2072,8 +2210,7 @@ export default function ${componentName}() {
                               <input
                                 type="text"
                                 value={
-                                  currentSection.logoBorderColor ||
-                                  "#000000"
+                                  currentSection.logoBorderColor || "#000000"
                                 }
                                 onChange={(e) =>
                                   updateSectionContent(currentSection.id, {
@@ -2197,7 +2334,10 @@ export default function ${componentName}() {
                     </label>
                     <div className="space-y-4">
                       {currentSection.items?.map((item, idx) => (
-                        <div key={item.id} className="p-3 border border-gray-200 rounded bg-gray-50">
+                        <div
+                          key={item.id}
+                          className="p-3 border border-gray-200 rounded bg-gray-50"
+                        >
                           {/* Link Text */}
                           <div className="mb-2">
                             <label className="text-xs text-gray-600 block mb-1">
@@ -2263,7 +2403,9 @@ export default function ${componentName}() {
                               className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                             >
                               <option value="external">External URL</option>
-                              <option value="internal">Internal Route (React)</option>
+                              <option value="internal">
+                                Internal Route (React)
+                              </option>
                               <option value="anchor">Anchor Link (#)</option>
                             </select>
                           </div>
@@ -2271,11 +2413,11 @@ export default function ${componentName}() {
                           {/* Link URL */}
                           <div className="mb-2">
                             <label className="text-xs text-gray-600 block mb-1">
-                              {item.linkType === "internal" 
+                              {item.linkType === "internal"
                                 ? "Route Path (e.g., /about, /products)"
                                 : item.linkType === "anchor"
-                                ? "Section ID (e.g., #features, #pricing)"
-                                : "Full URL (e.g., https://example.com)"}
+                                  ? "Section ID (e.g., #features, #pricing)"
+                                  : "Full URL (e.g., https://example.com)"}
                             </label>
                             <input
                               type="text"
@@ -2305,8 +2447,8 @@ export default function ${componentName}() {
                                 item.linkType === "internal"
                                   ? "/about"
                                   : item.linkType === "anchor"
-                                  ? "#features"
-                                  : "https://example.com"
+                                    ? "#features"
+                                    : "https://example.com"
                               }
                               className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                             />
@@ -2415,17 +2557,19 @@ export default function ${componentName}() {
                     <button
                       onClick={() => {
                         // Remove the element
-                        const updatedSections = website.sections.map((section) => {
-                          if (section.id === selectedElement.sectionId) {
-                            return {
-                              ...section,
-                              items: section.items.filter(
-                                (item) => item.id !== currentElement.id
-                              ),
-                            };
-                          }
-                          return section;
-                        });
+                        const updatedSections = website.sections.map(
+                          (section) => {
+                            if (section.id === selectedElement.sectionId) {
+                              return {
+                                ...section,
+                                items: section.items.filter(
+                                  (item) => item.id !== currentElement.id,
+                                ),
+                              };
+                            }
+                            return section;
+                          },
+                        );
                         setWebsite({ ...website, sections: updatedSections });
                         setSelectedElement({
                           sectionId: selectedElement.sectionId,
@@ -2657,16 +2801,12 @@ export default function ${componentName}() {
 
                       {/* Opacity */}
                       <div>
-                        <label className="text-xs text-gray-600">
-                          Opacity
-                        </label>
+                        <label className="text-xs text-gray-600">Opacity</label>
                         <input
                           type="range"
                           min="0"
                           max="100"
-                          value={
-                            (currentElement.properties.opacity || 1) * 100
-                          }
+                          value={(currentElement.properties.opacity || 1) * 100}
                           onChange={(e) =>
                             updateElement(currentElement.id, {
                               opacity: parseInt(e.target.value) / 100,
@@ -2677,7 +2817,8 @@ export default function ${componentName}() {
                         <span className="text-xs text-gray-500">
                           {(
                             (currentElement.properties.opacity || 1) * 100
-                          ).toFixed(0)}%
+                          ).toFixed(0)}
+                          %
                         </span>
                       </div>
 
@@ -2723,8 +2864,7 @@ export default function ${componentName}() {
                                 })
                               }
                               className={`flex-1 px-2 py-1 text-xs rounded transition ${
-                                currentElement.properties.textAlign ===
-                                align
+                                currentElement.properties.textAlign === align
                                   ? "bg-blue-600 text-white"
                                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                               }`}

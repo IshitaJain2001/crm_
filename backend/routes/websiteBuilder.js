@@ -285,6 +285,29 @@ router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
     if (!Array.isArray(sections)) {
       sections = [];
     }
+    
+    // Handle case where sections is an array with a stringified array as first element
+    // e.g., ["[{...}]"] instead of [{...}]
+    if (sections.length > 0 && typeof sections[0] === "string") {
+      try {
+        const parsed = JSON.parse(sections[0]);
+        if (Array.isArray(parsed)) {
+          sections = parsed;
+        }
+      } catch (e) {
+        // If it can't be parsed, try to extract sections from the string
+        console.warn("Could not parse sections[0]:", e.message);
+      }
+    }
+    
+    // Ensure all elements in sections array are objects, not strings
+    sections = sections.filter(item => {
+      if (typeof item === "string") {
+        console.warn("Filtered out stringified section:", item.substring(0, 50));
+        return false;
+      }
+      return true;
+    });
 
     const company = await Company.findOne({ superAdmin: req.user.id });
 

@@ -250,7 +250,7 @@ const Feedback = () => {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${isDark ? 'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-900' : 'border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-200'}`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-500' : 'border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-200'}`}
                   >
                     <option value="general">General Feedback</option>
                     <option value="feature_request">Feature Request</option>
@@ -270,7 +270,7 @@ const Feedback = () => {
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="Brief title of your feedback"
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-900' : 'border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-200'}`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-500' : 'border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-200'}`}
                   />
                   <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     Minimum 5 characters

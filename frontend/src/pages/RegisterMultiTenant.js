@@ -13,6 +13,7 @@ const RegisterMultiTenant = () => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [industry, setIndustry] = useState("");
+  const [customIndustry, setCustomIndustry] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -104,7 +105,7 @@ const RegisterMultiTenant = () => {
     setLoading(true);
 
     try {
-      if (!fullName || !companyName || !displayName || !password || !phoneNumber || !companySize || !country || !jobTitle) {
+      if (!fullName || !companyName || !displayName || !password || !phoneNumber || !companySize || !country) {
         toast.error("Please fill in all required fields");
         return;
       }
@@ -129,6 +130,13 @@ const RegisterMultiTenant = () => {
         return;
       }
 
+      if (industry === "others" && !customIndustry.trim()) {
+        toast.error("Please specify your business type");
+        return;
+      }
+
+      const finalIndustry = industry === "others" ? customIndustry : industry;
+
       const response = await axios.post(
         `${API_URL}/api/auth/register-company`,
         {
@@ -137,7 +145,7 @@ const RegisterMultiTenant = () => {
           name: fullName,
           companyName,
           displayName,
-          industry,
+          industry: finalIndustry,
           phoneNumber,
           companySize,
           country,
@@ -153,9 +161,9 @@ const RegisterMultiTenant = () => {
 
       toast.success(response.data.message);
 
-      // Force page reload to sync auth state
+      // Redirect to dashboard
       setTimeout(() => {
-        window.location.href = "/";
+        navigate("/dashboard");
       }, 500);
     } catch (error) {
       const errorCode = error.response?.data?.code;
@@ -198,13 +206,13 @@ const RegisterMultiTenant = () => {
                   Email
                 </label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900"
-                  placeholder="your@email.com"
-                  disabled={step > 1}
-                />
+                   type="email"
+                   value={email}
+                   onChange={(e) => setEmail(e.target.value)}
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
+                   placeholder="your@email.com"
+                   disabled={step > 1}
+                 />
               </div>
 
               <button
@@ -234,13 +242,13 @@ const RegisterMultiTenant = () => {
                   6-Digit OTP
                 </label>
                 <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.slice(0, 6))}
-                  maxLength="6"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-center text-2xl tracking-widest"
-                  placeholder="000000"
-                />
+                   type="text"
+                   value={otp}
+                   onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+                   maxLength="6"
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-center text-2xl tracking-widest bg-white text-gray-900 placeholder-gray-600"
+                   placeholder="000000"
+                 />
                 <p className="text-xs text-gray-500 mt-2">
                   Check your email for the OTP (expires in 10 minutes)
                 </p>
@@ -307,7 +315,7 @@ const RegisterMultiTenant = () => {
                   placeholder="https://www.example.com"
                   value={existingWebsite}
                   onChange={(e) => setExistingWebsite(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
                 />
               )}
 
@@ -375,7 +383,7 @@ const RegisterMultiTenant = () => {
                 <select
                   value={industry}
                   onChange={(e) => setIndustry(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900"
                 >
                   <option value="">Select your business type</option>
                   {industries.map((ind) => {
@@ -392,6 +400,7 @@ const RegisterMultiTenant = () => {
                       </option>
                     );
                   })}
+                  <option value="others">Others</option>
                 </select>
                 {!industry && (
                   <p className="text-xs text-red-500 mt-1">
@@ -399,6 +408,26 @@ const RegisterMultiTenant = () => {
                   </p>
                 )}
               </div>
+
+              {industry === "others" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Please specify your business type <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={customIndustry}
+                    onChange={(e) => setCustomIndustry(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
+                    placeholder="e.g., Logistics, Media, Tourism, etc."
+                  />
+                  {!customIndustry && industry === "others" && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Business type is required
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -408,94 +437,94 @@ const RegisterMultiTenant = () => {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
                   placeholder="Your name"
-                />
-              </div>
+                  />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Slug
-                </label>
-                <input
-                  type="text"
-                  value={companyName}
-                  onChange={(e) =>
-                    setCompanyName(
-                      e.target.value.toLowerCase().replace(/\s+/g, "-"),
-                    )
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="your-company"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Use lowercase and hyphens (e.g., ishita-crm)
-                </p>
-              </div>
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Company Slug
+                  </label>
+                  <input
+                   type="text"
+                   value={companyName}
+                   onChange={(e) =>
+                     setCompanyName(
+                       e.target.value.toLowerCase().replace(/\s+/g, "-"),
+                     )
+                   }
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
+                   placeholder="your-company"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                   Use lowercase and hyphens (e.g., ishita-crm)
+                  </p>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Display Name
-                </label>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="Ishita's CRM"
-                />
-              </div>
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Company Display Name
+                  </label>
+                  <input
+                   type="text"
+                   value={displayName}
+                   onChange={(e) => setDisplayName(e.target.value)}
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
+                   placeholder="Ishita's CRM"
+                  />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="••••••••"
-                />
-              </div>
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Password
+                  </label>
+                  <input
+                   type="password"
+                   value={password}
+                   onChange={(e) => setPassword(e.target.value)}
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
+                   placeholder="••••••••"
+                  />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="••••••••"
-                />
-              </div>
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Confirm Password
+                  </label>
+                  <input
+                   type="password"
+                   value={confirmPassword}
+                   onChange={(e) => setConfirmPassword(e.target.value)}
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
+                   placeholder="••••••••"
+                  />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Title
-                </label>
-                <input
-                  type="text"
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="e.g., Sales Manager"
-                />
-              </div>
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Job Title <span className="text-gray-500 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                   type="text"
+                   value={jobTitle}
+                   onChange={(e) => setJobTitle(e.target.value)}
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
+                   placeholder="e.g., HR Manager, Sales Lead (optional)"
+                  />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="+1 (555) 000-0000"
-                />
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Phone Number
+                  </label>
+                  <input
+                   type="tel"
+                   value={phoneNumber}
+                   onChange={(e) => setPhoneNumber(e.target.value)}
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-600"
+                   placeholder="+1 (555) 000-0000"
+                  />
               </div>
 
               <div>
@@ -505,9 +534,9 @@ const RegisterMultiTenant = () => {
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900"
                 >
-                  <option value="">Select your country</option>
+                   <option value="">Select your country</option>
                   <option value="United States">United States</option>
                   <option value="Canada">Canada</option>
                   <option value="United Kingdom">United Kingdom</option>
@@ -527,9 +556,9 @@ const RegisterMultiTenant = () => {
                 <select
                   value={companySize}
                   onChange={(e) => setCompanySize(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900"
                 >
-                  <option value="">Select company size</option>
+                   <option value="">Select company size</option>
                   <option value="1-10">1-10 employees</option>
                   <option value="11-50">11-50 employees</option>
                   <option value="51-200">51-200 employees</option>

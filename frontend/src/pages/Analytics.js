@@ -5,12 +5,14 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useTheme } from "../context/ThemeContext";
+import { useLayout } from "../context/LayoutContext";
 import toast from "react-hot-toast";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Analytics = () => {
   const { isDark } = useTheme();
+  const { sidebarOpen } = useLayout();
   const token = useSelector((state) => state.auth.token);
   const user = useSelector((state) => state.auth.user);
   const [loading, setLoading] = useState(true);
@@ -54,10 +56,13 @@ const Analytics = () => {
 
   if (!analytics || loading) {
     return (
-      <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+      <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className={`absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300`}>
+          <Header title="Company Analytics Dashboard" />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
         </div>
       </div>
     );
@@ -66,13 +71,14 @@ const Analytics = () => {
   const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
   return (
-    <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <Sidebar />
 
-      <div className="flex-1 overflow-auto">
+      <div className={`absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300`}>
         <Header title="Company Analytics Dashboard" />
 
-        <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className={`flex-1 overflow-auto ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+          <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
           {/* Refresh Button */}
           <div className="mb-6 flex justify-between items-center">
             <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Analytics Overview</h2>
@@ -102,10 +108,10 @@ const Analytics = () => {
              </div>
 
             {/* Deals */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600 text-sm mb-2">Sales Pipeline</p>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <p className={`text-sm mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Sales Pipeline</p>
               <p className="text-3xl font-bold text-green-600">${(analytics.openDeals || 0)}</p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 {analytics.totalDeals} total | {analytics.wonDeals} won
               </p>
               <p className="text-sm font-semibold mt-2 text-yellow-600">
@@ -114,10 +120,10 @@ const Analytics = () => {
             </div>
 
             {/* Contacts */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600 text-sm mb-2">Contacts</p>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <p className={`text-sm mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Contacts</p>
               <p className="text-3xl font-bold text-purple-600">{analytics.totalContacts}</p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 {analytics.activeContacts} active
               </p>
               <p className="text-sm font-semibold mt-2 text-purple-600">
@@ -126,10 +132,10 @@ const Analytics = () => {
             </div>
 
             {/* Team */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600 text-sm mb-2">Team Activity</p>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <p className={`text-sm mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Team Activity</p>
               <p className="text-3xl font-bold text-orange-600">{analytics.totalActivities}</p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 {analytics.activitiesThisMonth} this month
               </p>
               <p className="text-sm font-semibold mt-2 text-orange-600">
@@ -141,8 +147,8 @@ const Analytics = () => {
           {/* Charts Row 1 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Revenue Trend */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue Trend (12 Months)</h3>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>Revenue Trend (12 Months)</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={analytics.revenueByMonth}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -155,8 +161,8 @@ const Analytics = () => {
             </div>
 
             {/* Pipeline Distribution */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Pipeline by Stage</h3>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>Pipeline by Stage</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -181,8 +187,8 @@ const Analytics = () => {
           {/* Charts Row 2 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Deals Won by Month */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Deals Won (12 Months)</h3>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>Deals Won (12 Months)</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={analytics.dealsWonByMonth}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -198,15 +204,15 @@ const Analytics = () => {
             </div>
 
             {/* Top Performers */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Performers</h3>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>Top Performers</h3>
               <div className="space-y-4">
                 {analytics.topPerformers && analytics.topPerformers.length > 0 ? (
                   analytics.topPerformers.map((performer) => (
-                    <div key={performer.employeeId} className="flex justify-between items-center pb-3 border-b">
+                    <div key={performer.employeeId} className={`flex justify-between items-center pb-3 border-b ${isDark ? 'border-gray-700' : ''}`}>
                       <div>
-                        <p className="font-semibold text-gray-800">#{performer.rank} {performer.name}</p>
-                        <p className="text-sm text-gray-500">{performer.dealsWon} deals won</p>
+                        <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>#{performer.rank} {performer.name}</p>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{performer.dealsWon} deals won</p>
                       </div>
                       <p className="text-lg font-bold text-green-600">
                         ${(performer.revenueGenerated / 1000).toFixed(1)}K
@@ -214,7 +220,7 @@ const Analytics = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-8">No deals data available</p>
+                  <p className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>No deals data available</p>
                 )}
               </div>
             </div>
@@ -223,11 +229,11 @@ const Analytics = () => {
           {/* Detailed Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Deal Stats */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h4 className="font-semibold text-gray-800 mb-4">Deal Statistics</h4>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h4 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>Deal Statistics</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Deals:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Total Deals:</span>
                   <span className="font-semibold">{analytics.totalDeals}</span>
                 </div>
                 <div className="flex justify-between">
@@ -243,76 +249,76 @@ const Analytics = () => {
                   <span className="font-semibold">${(analytics.avgDealSize / 1000).toFixed(1)}K</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Sales Cycle:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Sales Cycle:</span>
                   <span className="font-semibold">{analytics.avgSalesCycle} days</span>
                 </div>
               </div>
             </div>
 
             {/* Task Stats */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h4 className="font-semibold text-gray-800 mb-4">Task Statistics</h4>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h4 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>Task Statistics</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Tasks:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Total Tasks:</span>
                   <span className="font-semibold">{analytics.totalTasks}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Completed:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Completed:</span>
                   <span className="font-semibold text-green-600">{analytics.completedTasks}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Overdue:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Overdue:</span>
                   <span className="font-semibold text-red-600">{analytics.overdueTasks}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Completion Rate:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Completion Rate:</span>
                   <span className="font-semibold">{analytics.taskCompletionRate}%</span>
                 </div>
               </div>
             </div>
 
             {/* Contact Stats */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h4 className="font-semibold text-gray-800 mb-4">Contact Statistics</h4>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h4 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>Contact Statistics</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Contacts:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Total Contacts:</span>
                   <span className="font-semibold">{analytics.totalContacts}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Active:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Active:</span>
                   <span className="font-semibold">{analytics.activeContacts}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Added This Month:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Added This Month:</span>
                   <span className="font-semibold">{analytics.contactsAddedThisMonth}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Conversion:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Conversion:</span>
                   <span className="font-semibold">{analytics.contactConversionRate}%</span>
                 </div>
               </div>
             </div>
 
             {/* Team Stats */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h4 className="font-semibold text-gray-800 mb-4">Team Statistics</h4>
+            <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h4 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>Team Statistics</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Employees:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Total Employees:</span>
                   <span className="font-semibold">{analytics.totalEmployees}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Active:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Active:</span>
                   <span className="font-semibold">{analytics.activeEmployees}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Activities:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Total Activities:</span>
                   <span className="font-semibold">{analytics.totalActivities}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">This Month:</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>This Month:</span>
                   <span className="font-semibold">{analytics.activitiesThisMonth}</span>
                 </div>
               </div>
@@ -320,8 +326,9 @@ const Analytics = () => {
           </div>
 
           {/* Last Updated */}
-          <div className="mt-8 text-center text-sm text-gray-500">
+          <div className={`mt-8 text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             Last updated: {new Date(analytics.lastUpdated).toLocaleString()}
+          </div>
           </div>
         </div>
       </div>

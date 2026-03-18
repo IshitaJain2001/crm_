@@ -8,8 +8,8 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/api/auth/login`, credentials);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      sessionStorage.setItem('token', response.data.token);
+      sessionStorage.setItem('user', JSON.stringify(response.data.user));
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -22,8 +22,8 @@ export const registerUser = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/api/auth/register`, userData);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      sessionStorage.setItem('token', response.data.token);
+      sessionStorage.setItem('user', JSON.stringify(response.data.user));
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -33,8 +33,8 @@ export const registerUser = createAsyncThunk(
 
 export const checkAuth = createAsyncThunk('auth/checkAuth', async (_, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const token = sessionStorage.getItem('token');
+    const user = sessionStorage.getItem('user');
     if (token && user) {
       return {
         token,
@@ -63,8 +63,17 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+    },
+    setGoogleLogin: (state, action) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.isAuthenticated = true;
+      state.loading = false;
+      state.error = null;
+      sessionStorage.setItem('token', action.payload.token);
+      sessionStorage.setItem('user', JSON.stringify(action.payload.user));
     }
   },
   extraReducers: (builder) => {
@@ -123,5 +132,5 @@ const authSlice = createSlice({
   }
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setGoogleLogin } = authSlice.actions;
 export default authSlice.reducer;

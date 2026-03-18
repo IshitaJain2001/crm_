@@ -4,6 +4,7 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../context/LayoutContext';
 import { FiPlus, FiTrash2, FiEdit2, FiMail, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -11,6 +12,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const Employees = () => {
   const { isDark } = useTheme();
+  const { sidebarOpen } = useLayout();
   const token = useSelector(state => state.auth.token);
   const [employees, setEmployees] = useState([]);
   const [pendingInvitations, setPendingInvitations] = useState([]);
@@ -151,12 +153,13 @@ const Employees = () => {
   };
 
   return (
-    <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <Sidebar />
-      <div className="flex-1 overflow-auto">
+      <div className={`absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300`}>
         <Header title="My Employees" />
 
-        <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className={`flex-1 overflow-auto ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+          <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
           {/* Tabs */}
           <div className={`flex gap-4 mb-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
             <button
@@ -341,26 +344,26 @@ const Employees = () => {
                   ) : (
                     employees.length === 0 ? (
                       <tr>
-                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan="6" className={`px-6 py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                           No employees yet. Invite someone to get started!
                         </td>
                       </tr>
                     ) : (
                       employees.map((emp) => (
-                        <tr key={emp._id} className="border-b hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{emp.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{emp.email}</td>
+                        <tr key={emp._id} className={`border-b ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}>
+                          <td className={`px-6 py-4 text-sm font-medium ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{emp.name}</td>
+                          <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{emp.email}</td>
                           <td className="px-6 py-4 text-sm">
-                            <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-semibold">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
                               {emp.role.toUpperCase()}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600 capitalize">{emp.department}</td>
+                          <td className={`px-6 py-4 text-sm capitalize ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{emp.department}</td>
                           <td className="px-6 py-4 text-sm">
                             <span className={`px-2 py-1 rounded text-xs font-semibold ${
                               emp.active
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
+                                ? (isDark ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800')
+                                : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800')
                             }`}>
                               {emp.active ? 'Active' : 'Inactive'}
                             </span>
@@ -399,6 +402,7 @@ const Employees = () => {
               </table>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
