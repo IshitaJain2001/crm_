@@ -5,9 +5,11 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { FiPlus, FiFilter, FiList, FiGrid, FiDollarSign } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useTheme } from '../context/ThemeContext';
 
 const DealsPipeline = () => {
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const { isDark } = useTheme();
   const token = useSelector(state => state.auth.token);
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,14 +111,14 @@ const DealsPipeline = () => {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen bg-gray-900">
+      <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <Sidebar />
         <div className={`absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300`}>
           <Header title="Pipeline" />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-400">Loading pipeline...</p>
+              <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Loading pipeline...</p>
             </div>
           </div>
         </div>
@@ -125,23 +127,23 @@ const DealsPipeline = () => {
   }
 
   return (
-    <div className="h-screen w-screen bg-gray-900">
+    <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <Sidebar />
       <div className={`absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300`}>
         <Header title="Pipeline" />
-        <div className="flex-1 overflow-auto bg-gray-900">
+        <div className={`flex-1 overflow-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
           <div className="p-6 mx-auto w-7/10 mt-16">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">All Pipelines</h3>
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>All Pipelines</h3>
               <div className="flex items-center gap-3">
-                <div className="flex items-center bg-gray-800 rounded-lg border border-gray-700">
+                <div className={`flex items-center rounded-lg border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}`}>
                   <button
                     onClick={() => setViewMode('kanban')}
                     className={`px-3 py-2 ${
                       viewMode === 'kanban'
-                        ? 'text-blue-400'
-                        : 'text-gray-400 hover:text-white'
+                        ? 'text-blue-600'
+                        : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
                     }`}
                   >
                     <FiGrid className="w-5 h-5" />
@@ -150,8 +152,8 @@ const DealsPipeline = () => {
                     onClick={() => setViewMode('list')}
                     className={`px-3 py-2 ${
                       viewMode === 'list'
-                        ? 'text-blue-400'
-                        : 'text-gray-400 hover:text-white'
+                        ? 'text-blue-600'
+                        : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
                     }`}
                   >
                     <FiList className="w-5 h-5" />
@@ -178,17 +180,17 @@ const DealsPipeline = () => {
                     onDrop={() => handleDrop(stage.id)}
                   >
                     {/* Stage Header */}
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
+                    <div className={`border rounded-lg p-4 mb-4 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className={`w-3 h-3 rounded-full ${stage.color}`}></div>
-                          <h3 className="font-semibold text-white">{stage.name}</h3>
-                          <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">
+                          <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{stage.name}</h3>
+                          <span className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
                             {getDealsByStage(stage.id).length}
                           </span>
                         </div>
                       </div>
-                      <p className="text-gray-400 text-sm">
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                         ${getTotalRevenue(stage.id).toLocaleString()}
                       </p>
                     </div>
@@ -200,10 +202,11 @@ const DealsPipeline = () => {
                           key={deal._id}
                           deal={deal}
                           onDragStart={() => handleDragStart(deal)}
+                          isDark={isDark}
                         />
                       ))}
                       {getDealsByStage(stage.id).length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
+                        <div className={`text-center py-8 ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
                           No deals
                         </div>
                       )}
@@ -215,42 +218,42 @@ const DealsPipeline = () => {
 
             {/* List View */}
             {viewMode === 'list' && (
-              <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+              <div className={`border rounded-lg overflow-hidden ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}`}>
                 <table className="w-full">
-                  <thead className="bg-gray-900 border-b border-gray-700">
+                  <thead className={`border-b ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
                     <tr>
-                      <th className="px-6 py-4 text-left text-gray-400 font-medium">Deal Name</th>
-                      <th className="px-6 py-4 text-left text-gray-400 font-medium">Company</th>
-                      <th className="px-6 py-4 text-left text-gray-400 font-medium">Amount</th>
-                      <th className="px-6 py-4 text-left text-gray-400 font-medium">Stage</th>
-                      <th className="px-6 py-4 text-left text-gray-400 font-medium">Close Date</th>
-                      <th className="px-6 py-4 text-left text-gray-400 font-medium">Status</th>
+                      <th className={`px-6 py-4 text-left font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Deal Name</th>
+                      <th className={`px-6 py-4 text-left font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Company</th>
+                      <th className={`px-6 py-4 text-left font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Amount</th>
+                      <th className={`px-6 py-4 text-left font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Stage</th>
+                      <th className={`px-6 py-4 text-left font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Close Date</th>
+                      <th className={`px-6 py-4 text-left font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {deals.map(deal => (
                       <tr
                         key={deal._id}
-                        className="border-b border-gray-700 hover:bg-gray-700 transition"
+                        className={`border-b transition ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}
                       >
                         <td className="px-6 py-4">
-                          <p className="text-white font-medium">{deal.dealName}</p>
+                          <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{deal.dealName}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-gray-400">{deal.company?.name || 'N/A'}</p>
+                          <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>{deal.company?.name || 'N/A'}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-white font-semibold">
+                          <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             ${deal.amount?.toLocaleString() || 0}
                           </p>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm">
+                          <span className={`px-3 py-1 rounded text-sm ${isDark ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'}`}>
                             {stages.find(s => s.id === deal.dealStage)?.name}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-gray-400">
+                          <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                             {new Date(deal.expectedCloseDate).toLocaleDateString()}
                           </p>
                         </td>
@@ -258,10 +261,10 @@ const DealsPipeline = () => {
                           <span
                             className={`px-3 py-1 rounded text-sm font-medium ${
                               deal.dealStatus === 'won'
-                                ? 'bg-green-500/20 text-green-400'
+                                ? isDark ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-700'
                                 : deal.dealStatus === 'lost'
-                                ? 'bg-red-500/20 text-red-400'
-                                : 'bg-blue-500/20 text-blue-400'
+                                ? isDark ? 'bg-red-900 text-red-300' : 'bg-red-100 text-red-700'
+                                : isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'
                             }`}
                           >
                             {deal.dealStatus?.toUpperCase()}
@@ -280,44 +283,44 @@ const DealsPipeline = () => {
       {/* New Deal Modal */}
       {showNewDealModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 w-full max-w-md">
-            <h2 className="text-2xl font-bold text-white mb-6">Create New Deal</h2>
+          <div className={`rounded-lg border p-8 w-full max-w-md ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}`}>
+            <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Create New Deal</h2>
             <form onSubmit={handleCreateDeal} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Deal Name
                 </label>
                 <input
                   type="text"
                   value={newDeal.dealName}
                   onChange={(e) => setNewDeal({ ...newDeal, dealName: e.target.value })}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  className={`w-full border rounded px-3 py-2 focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`}
                   placeholder="e.g. Acme Corp - Enterprise Plan"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Amount
                 </label>
                 <input
                   type="number"
                   value={newDeal.amount}
                   onChange={(e) => setNewDeal({ ...newDeal, amount: parseFloat(e.target.value) })}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  className={`w-full border rounded px-3 py-2 focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`}
                   placeholder="0.00"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Expected Close Date
                 </label>
                 <input
                   type="date"
                   value={newDeal.expectedCloseDate}
                   onChange={(e) => setNewDeal({ ...newDeal, expectedCloseDate: e.target.value })}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className={`w-full border rounded px-3 py-2 focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   required
                 />
               </div>
@@ -325,7 +328,7 @@ const DealsPipeline = () => {
                 <button
                   type="button"
                   onClick={() => setShowNewDealModal(false)}
-                  className="flex-1 px-4 py-2 text-gray-300 bg-gray-700 hover:bg-gray-600 rounded transition"
+                  className={`flex-1 px-4 py-2 rounded transition ${isDark ? 'text-gray-300 bg-gray-700 hover:bg-gray-600' : 'text-gray-700 bg-gray-200 hover:bg-gray-300'}`}
                 >
                   Cancel
                 </button>
@@ -345,24 +348,24 @@ const DealsPipeline = () => {
 };
 
 // Deal Card Component
-const DealCard = ({ deal, onDragStart }) => (
+const DealCard = ({ deal, onDragStart, isDark }) => (
   <div
     draggable
     onDragStart={onDragStart}
-    className="bg-gray-700 border border-gray-600 rounded-lg p-4 cursor-move hover:bg-gray-650 hover:border-gray-500 transition"
+    className={`border rounded-lg p-4 cursor-move transition shadow-sm ${isDark ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' : 'bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'}`}
   >
-    <h4 className="text-white font-semibold mb-2">{deal.dealName}</h4>
-    <p className="text-gray-400 text-sm mb-3">{deal.company?.name || 'Unknown'}</p>
+    <h4 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{deal.dealName}</h4>
+    <p className={`text-sm mb-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{deal.company?.name || 'Unknown'}</p>
     <div className="flex items-center justify-between">
-      <p className="text-white font-bold flex items-center gap-1">
+      <p className={`font-bold flex items-center gap-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
         <FiDollarSign className="w-4 h-4" />
         {(deal.amount || 0).toLocaleString()}
       </p>
       <span
         className={`text-xs px-2 py-1 rounded ${
           deal.dealStatus === 'won'
-            ? 'bg-green-500/20 text-green-400'
-            : 'bg-blue-500/20 text-blue-400'
+            ? isDark ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-700'
+            : isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'
         }`}
       >
         {deal.dealStatus || 'open'}

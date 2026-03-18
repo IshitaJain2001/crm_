@@ -154,9 +154,9 @@ const Feedback = () => {
 
   if (user?.role !== "superadmin") {
     return (
-      <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+      <div className={`h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="absolute top-0 left-64 right-0 bottom-0 flex items-center justify-center">
           <div className="text-center">
             <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
               Access Denied
@@ -171,10 +171,10 @@ const Feedback = () => {
   }
 
   return (
-    <div className={`flex h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <Sidebar />
 
-      <div className="flex-1 overflow-auto">
+      <div className="absolute top-0 left-64 right-0 bottom-0 overflow-auto flex flex-col">
         <Header title="Feedback & Suggestions" />
 
         <div className={`p-6 max-w-4xl ${isDark ? 'bg-gray-900' : ''}`}>

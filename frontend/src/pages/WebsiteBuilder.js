@@ -1334,9 +1334,9 @@ export default function ${componentName}() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-screen bg-gray-50">
       {/* Top Header */}
-      <div className="bg-gray-900 dark:bg-gray-950 text-white px-6 py-3 flex justify-between items-center shadow-lg">
+      <div className="bg-white border-b border-gray-300 text-gray-900 px-6 py-3 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold">🌐 Website Builder</h1>
           <div className="text-xs px-2 py-1 rounded">
@@ -1427,13 +1427,13 @@ export default function ${componentName}() {
                 setShowPreview(false);
                 localStorage.setItem("websiteBuilderPreviewMode", "false");
               }}
-              className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg transition font-semibold"
+              className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg transition font-semibold"
             >
               ← Back to Edit
             </button>
 
             {/* Preview Content */}
-            <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+            <div className="flex-1 overflow-y-auto bg-white">
               {/* Route Indicator */}
               {currentRoute !== "/" && (
                 <div className="sticky top-0 z-40 bg-blue-100 border-b-2 border-blue-500 px-4 py-2">
@@ -1628,9 +1628,9 @@ export default function ${componentName}() {
         ) : (
           <>
             {/* Left Sidebar - Elements Panel */}
-            <div className="w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto elements-panel border-r border-gray-200 dark:border-gray-700">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
+            <div className="w-64 bg-white shadow-lg overflow-y-auto elements-panel border-r border-gray-200">
+              <div className="p-4 border-b border-gray-200">
+                <h2 className="text-lg font-bold text-gray-800 mb-4">
                   Elements
                 </h2>
                 <div className="space-y-2 element-types">
@@ -1658,9 +1658,9 @@ export default function ${componentName}() {
               </div>
 
               {/* Sections List */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 sections-list">
+              <div className="p-4 border-b border-gray-200 sections-list">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold text-gray-700 dark:text-gray-200">
+                  <h3 className="font-semibold text-gray-700">
                     Sections
                   </h3>
                   <button
@@ -1686,7 +1686,7 @@ export default function ${componentName}() {
                         className={`p-3 rounded cursor-pointer transition ${
                           selectedElement?.sectionId === section.id
                             ? "bg-blue-500 text-white"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                       >
                         <p className="font-medium capitalize">{section.type}</p>
@@ -1700,7 +1700,7 @@ export default function ${componentName}() {
             </div>
 
             {/* Center - Canvas */}
-            <div className="flex-1 overflow-y-auto p-6 canvas-area bg-gray-50 dark:bg-gray-900">
+            <div className="flex-1 overflow-y-auto p-6 canvas-area bg-gray-50">
               {/* Navbar Preview - Always Show */}
               {(() => {
                 const navbarSection = website.sections.find(
@@ -1957,7 +1957,7 @@ export default function ${componentName}() {
                 )}
 
                 {!currentSection && (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-12 text-center text-gray-500 dark:text-gray-400">
+                  <div className="bg-white rounded-lg shadow-lg p-12 text-center text-gray-500">
                     Select a section from the left panel to edit
                   </div>
                 )}
@@ -1965,18 +1965,18 @@ export default function ${componentName}() {
             </div>
 
             {/* Right Sidebar - Properties Panel */}
-            <div className="w-80 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto border-l border-gray-200 dark:border-gray-700 properties-panel">
+            <div className="w-80 bg-white shadow-lg overflow-y-auto border-l border-gray-200 properties-panel">
               {currentSection?.type === "navbar" && !currentElement ? (
                 <div className="p-6 space-y-6">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">
                       Navbar Properties
                     </h3>
                   </div>
 
                   {/* Logo Image */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Logo Image
                     </label>
                     <div className="space-y-3">
@@ -2033,13 +2033,13 @@ export default function ${componentName}() {
                   {/* Logo Styling */}
                   {currentSection.logo && (
                     <div>
-                      <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <h4 className="font-semibold text-gray-700 mb-3">
                         ✨ Logo Styling
                       </h4>
                       <div className="space-y-3">
                         {/* Logo Width */}
                         <div>
-                          <label className="text-xs text-gray-600 dark:text-gray-400">
+                          <label className="text-xs text-gray-600">
                             Logo Width
                           </label>
                           <input
@@ -2054,14 +2054,14 @@ export default function ${componentName}() {
                             }
                             className="w-full"
                           />
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-gray-500">
                             {currentSection.logoWidth || 40}px
                           </span>
                         </div>
 
                         {/* Logo Height */}
                         <div>
-                          <label className="text-xs text-gray-600 dark:text-gray-400">
+                          <label className="text-xs text-gray-600">
                             Logo Height
                           </label>
                           <input

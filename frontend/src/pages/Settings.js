@@ -6,10 +6,12 @@ import { logout } from "../store/authSlice";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import toast from "react-hot-toast";
+import { useTheme } from "../context/ThemeContext";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Settings = () => {
+    const { isDark } = useTheme();
     const token = useSelector((state) => state.auth.token);
     const user = useSelector((state) => state.auth.user);
     const dispatch = useDispatch();
@@ -184,7 +186,7 @@ const Settings = () => {
 
     if (loading) {
         return (
-            <div className="h-screen w-screen bg-gray-50 dark:bg-gray-900">
+            <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
                 <Sidebar />
                 <div className="absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300">
                     <Header title="Settings & Workspace" />
@@ -197,16 +199,16 @@ const Settings = () => {
     }
 
     return (
-        <div className="h-screen w-screen bg-gray-50 dark:bg-gray-900">
+        <div className={`h-screen w-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
             <Sidebar />
             <div className="absolute top-0 bottom-0 left-64 right-0 flex flex-col overflow-hidden transition-all duration-300">
                 <Header title="Settings & Workspace" />
-                <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+                <div className={`flex-1 overflow-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
                     <div className="p-6 max-w-4xl mt-20">
                         {/* Workspace Info */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+                        <div className={`rounded-lg shadow p-6 mb-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+                                <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
                                     Workspace
                                 </h2>
                                 {!editMode && (
@@ -222,14 +224,14 @@ const Settings = () => {
                             {editMode ? (
                                 <form onSubmit={handleUpdateCompany} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                             Display Name
                                         </label>
                                         <input
                                             type="text"
                                             value={displayName}
                                             onChange={(e) => setDisplayName(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+                                            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                                         />
                                     </div>
 
@@ -246,7 +248,7 @@ const Settings = () => {
                                                 setEditMode(false);
                                                 setDisplayName(company.displayName);
                                             }}
-                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg"
+                                            className={`px-4 py-2 rounded-lg ${isDark ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-300 hover:bg-gray-400 text-gray-800'}`}
                                         >
                                             Cancel
                                         </button>
@@ -255,34 +257,34 @@ const Settings = () => {
                             ) : (
                                 <div className="space-y-3">
                                     <div>
-                                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                             Workspace Slug
                                         </p>
-                                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                             {company?.name}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                             Display Name
                                         </p>
-                                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                             {company?.displayName}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                             Plan
                                         </p>
-                                        <p className="text-lg font-semibold text-blue-600 dark:text-blue-400 uppercase">
+                                        <p className={`text-lg font-semibold uppercase ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                                             {company?.plan}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                             Max Users
                                         </p>
-                                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                             Unlimited
                                         </p>
                                     </div>
@@ -291,25 +293,25 @@ const Settings = () => {
                         </div>
 
                         {/* Team Members */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+                        <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+                            <h2 className={`text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
                                 Team Members
                             </h2>
 
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
+                                    <thead className={`border-b ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                            <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Name
                                             </th>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                            <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Email
                                             </th>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                            <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Role
                                             </th>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                            <th className={`px-6 py-3 text-left text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Status
                                             </th>
                                         </tr>
@@ -319,7 +321,7 @@ const Settings = () => {
                                             <tr>
                                                 <td
                                                     colSpan="4"
-                                                    className="px-6 py-8 text-center text-gray-500 dark:text-gray-400"
+                                                    className={`px-6 py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
                                                 >
                                                     No team members yet. Invite someone to get started!
                                                 </td>
@@ -328,12 +330,12 @@ const Settings = () => {
                                             members.map((member) => (
                                                 <tr
                                                     key={member.id}
-                                                    className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                                    className={`border-b ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}
                                                 >
-                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                                                    <td className={`px-6 py-4 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                                         {member.name}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                                                    <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                                         {member.email}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm">
