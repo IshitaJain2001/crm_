@@ -56,6 +56,50 @@ const websiteSchema = new mongoose.Schema(
         default: 0,
       },
     },
+    // Website Integration Settings
+    integrations: {
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+      apiKey: {
+        type: String,
+        unique: true,
+        sparse: true, // Allow null values for multiple documents
+      },
+      apiSecret: String,
+      webhookUrl: String,
+      formMappings: [
+        {
+          fieldName: String, // Form field name from external website
+          crmField: String, // Mapped CRM field (e.g., 'firstName', 'email', etc.)
+        },
+      ],
+    },
+    // Store form submissions from external website
+    formSubmissions: [
+      {
+        submissionId: {
+          type: String,
+          unique: true,
+          sparse: true,
+        },
+        data: mongoose.Schema.Types.Mixed, // Flexible field storage
+        source: String, // Source URL/domain
+        submittedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        processed: {
+          type: Boolean,
+          default: false,
+        },
+        linkedContact: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Contact",
+        },
+      },
+    ],
     createdAt: {
       type: Date,
       default: Date.now,

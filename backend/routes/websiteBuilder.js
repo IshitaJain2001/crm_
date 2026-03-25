@@ -1,9 +1,21 @@
 const express = require("express");
 const Website = require("../models/Website");
 const Company = require("../models/Company");
+const Contact = require("../models/Contact");
 const { authMiddleware, superAdminOnly } = require("../middleware/roleAuth");
+const crypto = require("crypto");
 
 const router = express.Router();
+
+// Generate API Key
+function generateAPIKey() {
+  return "crm_" + crypto.randomBytes(32).toString("hex");
+}
+
+// Generate API Secret
+function generateAPISecret() {
+  return crypto.randomBytes(32).toString("hex");
+}
 
 // ============================================================
 // Get or Create Website for Company
@@ -384,5 +396,360 @@ router.post("/publish", authMiddleware, superAdminOnly, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// ============================================================
+// Generate API Key for Website Integration
+// ============================================================
+router.post(
+  "/integration/generate-api-key",
+  authMiddleware,
+  superAdminOnly,
+  async (req, res) => {
+    try {
+      const company = await Company.findOne({ superAdmin: req.user.id });
+
+      if (!company) {
+        return res
+          .status(404)
+          .json({ error: "No company found under your admin" });
+      }
+
+      const website = await Website.findOne({ company: company._id });
+
+      if (!website) {
+        return res.status(404).json({ error: "Website not found" });
+      }
+
+      const apiKey = generateAPIKey();
+      const apiSecret = generateAPISecret();
+
+      website.integrations = {
+        ...website.integrations,
+        enabled: true,
+        apiKey,
+        apiSecret,
+      };
+
+      await website.save();
+
+      res.json({
+        message: "API credentials generated successfully",
+        apiKey,
+        apiSecret,
+        // Only send secret once, on generation
+        note: "Save your API secret securely. You won't be able to see it again.",
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// ============================================================
+// Get Integration Settings (API Key only, not secret)
+// ============================================================
+router.get(
+  "/integration/settings",
+  authMiddleware,
+  superAdminOnly,
+  async (req, res) => {
+    try {
+      const company = await Company.findOne({ superAdmin: req.user.id });
+
+      if (!company) {
+        return res
+          .status(404)
+          .json({ error: "No company found under your admin" });
+      }
+
+      const website = await Website.findOne({ company: company._id });
+
+      if (!website) {
+        return res.status(404).json({ error: "Website not found" });
+      }
+
+      res.json({
+        integrations: {
+          enabled: website.integrations?.enabled || false,
+          apiKey: website.integrations?.apiKey || null,
+          webhookUrl: website.integrations?.webhookUrl || null,
+          formMappings: website.integrations?.formMappings || [],
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// ============================================================
+// Update Form Field Mappings
+// ============================================================
+router.put(
+  "/integration/form-mappings",
+  authMiddleware,
+  superAdminOnly,
+  async (req, res) => {
+    try {
+      const { formMappings } = req.body;
+
+      if (!Array.isArray(formMappings)) {
+        return res.status(400).json({ error: "formMappings must be an array" });
+      }
+
+      const company = await Company.findOne({ superAdmin: req.user.id });
+
+      if (!company) {
+        return res
+          .status(404)
+          .json({ error: "No company found under your admin" });
+      }
+
+      const website = await Website.findOne({ company: company._id });
+
+      if (!website) {
+        return res.status(404).json({ error: "Website not found" });
+      }
+
+      website.integrations.formMappings = formMappings;
+      await website.save();
+
+      res.json({
+        message: "Form mappings updated successfully",
+        formMappings: website.integrations.formMappings,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// ============================================================
+// PUBLIC API: Submit Form from External Website
+// Uses API Key for authentication (no user session required)
+// ============================================================
+router.post("/api/form-submission", async (req, res) => {
+  try {
+    const { apiKey, formData, source } = req.body;
+
+    if (!apiKey) {
+      return res.status(400).json({ error: "API key is required" });
+    }
+
+    // Find website by API key
+    const website = await Website.findOne({ "integrations.apiKey": apiKey });
+
+    if (!website) {
+      return res.status(401).json({ error: "Invalid API key" });
+    }
+
+    if (!website.integrations?.enabled) {
+      return res.status(403).json({ error: "Integration is not enabled" });
+    }
+
+    const submissionId = crypto.randomUUID();
+
+    // Create form submission record
+    const submission = {
+      submissionId,
+      data: formData,
+      source: source || "unknown",
+      submittedAt: new Date(),
+      processed: false,
+    };
+
+    website.formSubmissions.push(submission);
+
+    // Auto-create/update contact if email mapping exists
+    const emailMapping = website.integrations.formMappings?.find(
+      (m) => m.crmField === "email"
+    );
+
+    if (emailMapping && formData[emailMapping.fieldName]) {
+      const email = formData[emailMapping.fieldName];
+      const company = await Company.findById(website.company);
+
+      if (company) {
+        // Get super admin for owner field
+        const owner = company.superAdmin || company.owner;
+
+        // Map form fields to contact fields
+        const contactData = {
+          email,
+          company: company._id,
+          owner,
+        };
+
+        // Default first and last name from form if available
+        const firstNameMapping = website.integrations.formMappings?.find(
+          (m) => m.crmField === "firstName"
+        );
+        const lastNameMapping = website.integrations.formMappings?.find(
+          (m) => m.crmField === "lastName"
+        );
+
+        // Ensure first and last name are present
+        contactData.firstName =
+          formData[firstNameMapping?.fieldName] || email.split("@")[0];
+        contactData.lastName =
+          formData[lastNameMapping?.fieldName] || "Lead";
+
+        // Map other fields
+        website.integrations.formMappings?.forEach((mapping) => {
+          const fieldValue = formData[mapping.fieldName];
+          if (fieldValue && mapping.crmField !== "firstName") {
+            // firstName already handled above
+            contactData[mapping.crmField] = fieldValue;
+          }
+        });
+
+        // Set lifecycle to lead
+        contactData.lifecycle = "lead";
+
+        // Find or create contact
+        let contact = await Contact.findOne({
+          email,
+          company: company._id,
+        });
+
+        if (!contact) {
+          contact = new Contact(contactData);
+          await contact.save();
+        } else {
+          // Update existing contact with new data
+          Object.assign(contact, contactData);
+          await contact.save();
+        }
+
+        // Link submission to contact
+        submission.linkedContact = contact._id;
+        submission.processed = true;
+      }
+    }
+
+    await website.save();
+
+    res.status(201).json({
+      message: "Form submission received successfully",
+      submissionId,
+    });
+  } catch (error) {
+    console.error("Form submission error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// Get Form Submissions (with pagination)
+// ============================================================
+router.get(
+  "/integration/submissions",
+  authMiddleware,
+  superAdminOnly,
+  async (req, res) => {
+    try {
+      const { page = 1, limit = 20, processed } = req.query;
+      const skip = (page - 1) * limit;
+
+      const company = await Company.findOne({ superAdmin: req.user.id });
+
+      if (!company) {
+        return res
+          .status(404)
+          .json({ error: "No company found under your admin" });
+      }
+
+      const website = await Website.findOne({ company: company._id });
+
+      if (!website) {
+        return res.status(404).json({ error: "Website not found" });
+      }
+
+      let submissions = website.formSubmissions || [];
+
+      // Filter by processed status if provided
+      if (processed !== undefined) {
+        submissions = submissions.filter(
+          (s) => s.processed === (processed === "true")
+        );
+      }
+
+      // Sort by most recent first
+      submissions.sort((a, b) => b.submittedAt - a.submittedAt);
+
+      const total = submissions.length;
+      const paginatedSubmissions = submissions.slice(skip, skip + limit);
+
+      // Populate contact details
+      const submissionsWithContacts = await Promise.all(
+        paginatedSubmissions.map(async (submission) => {
+          if (submission.linkedContact) {
+            const contact = await Contact.findById(submission.linkedContact);
+            return { ...submission.toObject(), contactDetails: contact };
+          }
+          return submission;
+        })
+      );
+
+      res.json({
+        submissions: submissionsWithContacts,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// ============================================================
+// Mark Submission as Processed
+// ============================================================
+router.put(
+  "/integration/submissions/:submissionId/process",
+  authMiddleware,
+  superAdminOnly,
+  async (req, res) => {
+    try {
+      const { submissionId } = req.params;
+
+      const company = await Company.findOne({ superAdmin: req.user.id });
+
+      if (!company) {
+        return res
+          .status(404)
+          .json({ error: "No company found under your admin" });
+      }
+
+      const website = await Website.findOne({ company: company._id });
+
+      if (!website) {
+        return res.status(404).json({ error: "Website not found" });
+      }
+
+      const submission = website.formSubmissions?.find(
+        (s) => s.submissionId === submissionId
+      );
+
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+
+      submission.processed = true;
+      await website.save();
+
+      res.json({
+        message: "Submission marked as processed",
+        submission,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
 
 module.exports = router;

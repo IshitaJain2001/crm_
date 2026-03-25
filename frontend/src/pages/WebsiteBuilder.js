@@ -411,6 +411,9 @@ const WebsiteBuilder = () => {
   const [showCodeExport, setShowCodeExport] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [currentRoute, setCurrentRoute] = useState("/"); // For preview route testing
+  const [showIntegrationModal, setShowIntegrationModal] = useState(false);
+  const [integrationSettings, setIntegrationSettings] = useState(null);
+  const [formSubmissions, setFormSubmissions] = useState([]);
 
   useEffect(() => {
     initializeWebsite();
@@ -767,6 +770,90 @@ const WebsiteBuilder = () => {
     } catch (error) {
       setSyncStatus("ready");
       toast.error("Saved locally, sync pending");
+    }
+  };
+
+  // Load integration settings
+  const loadIntegrationSettings = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/website-builder/integration/settings`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIntegrationSettings(response.data.integrations);
+      loadFormSubmissions();
+    } catch (error) {
+      console.error("Failed to load integration settings:", error);
+      toast.error("Failed to load integration settings");
+    }
+  };
+
+  // Load form submissions
+  const loadFormSubmissions = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/website-builder/integration/submissions?limit=50`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setFormSubmissions(response.data.submissions);
+    } catch (error) {
+      console.error("Failed to load form submissions:", error);
+    }
+  };
+
+  // Generate new API key
+  const generateNewAPIKey = async () => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/website-builder/integration/generate-api-key`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      toast.success("API key generated successfully!");
+      
+      // Copy API key to clipboard
+      navigator.clipboard.writeText(response.data.apiKey);
+      toast.success("API key copied to clipboard");
+      
+      // Show modal with secret
+      alert(
+        `API Secret (save this now, you won't see it again):\n\n${response.data.apiSecret}`
+      );
+      
+      loadIntegrationSettings();
+    } catch (error) {
+      toast.error("Failed to generate API key");
+    }
+  };
+
+  // Update form field mappings
+  const updateFormMappings = async (mappings) => {
+    try {
+      await axios.put(
+        `${API_URL}/api/website-builder/integration/form-mappings`,
+        { formMappings: mappings },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      toast.success("Form mappings updated successfully!");
+      loadIntegrationSettings();
+    } catch (error) {
+      toast.error("Failed to update form mappings");
     }
   };
 
@@ -1326,6 +1413,237 @@ export default function ${componentName}() {
     );
   }
 
+  // Integration Modal
+  if (showIntegrationModal && website) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">🔌 Website Integration</h2>
+            <button
+              onClick={() => setShowIntegrationModal(false)}
+              className="text-2xl text-gray-600 hover:text-gray-800"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* API Credentials Section */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">📝 API Credentials</h3>
+              
+              {integrationSettings?.apiKey ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      API Key
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={integrationSettings.apiKey}
+                        readOnly
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(integrationSettings.apiKey);
+                          toast.success("API key copied!");
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={generateNewAPIKey}
+                    className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium"
+                  >
+                    🔄 Regenerate API Key
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-gray-700 mb-4">No API credentials yet. Generate them to start receiving form submissions.</p>
+                  <button
+                    onClick={generateNewAPIKey}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-bold text-lg"
+                  >
+                    🔑 Generate API Credentials
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Field Mappings Section */}
+            {integrationSettings?.apiKey && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">📋 Form Field Mappings</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Map your form fields to CRM contact fields so submissions are automatically saved as leads.
+                </p>
+                
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {/* Standard CRM fields for mapping */}
+                  {["firstName", "lastName", "email", "phone", "company", "website"].map((crmField) => (
+                    <div key={crmField} className="flex gap-2 items-center">
+                      <label className="w-32 text-sm font-medium text-gray-700">
+                        {crmField.replace(/([A-Z])/g, " $1").trim()}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder={`Form field name for ${crmField}`}
+                        defaultValue={
+                          integrationSettings?.formMappings?.find(
+                            (m) => m.crmField === crmField
+                          )?.fieldName || ""
+                        }
+                        onChange={(e) => {
+                          const newMappings = [...(integrationSettings?.formMappings || [])];
+                          const existingIndex = newMappings.findIndex(
+                            (m) => m.crmField === crmField
+                          );
+                          
+                          if (e.target.value.trim()) {
+                            if (existingIndex >= 0) {
+                              newMappings[existingIndex].fieldName = e.target.value;
+                            } else {
+                              newMappings.push({
+                                fieldName: e.target.value,
+                                crmField,
+                              });
+                            }
+                          } else if (existingIndex >= 0) {
+                            newMappings.splice(existingIndex, 1);
+                          }
+                          
+                          updateFormMappings(newMappings);
+                        }}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Code Example Section */}
+            {integrationSettings?.apiKey && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">📄 Integration Code</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Add this code to your form to submit data to the CRM:
+                </p>
+                <pre className="bg-gray-900 text-green-400 p-3 rounded text-xs overflow-x-auto">
+{`const handleFormSubmit = async (formData) => {
+  const response = await fetch(
+    '${API_URL}/api/website-builder/api/form-submission',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apiKey: '${integrationSettings.apiKey}',
+        formData: formData,
+        source: window.location.href
+      })
+    }
+  );
+  return response.json();
+};`}
+                </pre>
+                <button
+                  onClick={() => {
+                    const code = `const handleFormSubmit = async (formData) => {
+  const response = await fetch(
+    '${API_URL}/api/website-builder/api/form-submission',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apiKey: '${integrationSettings.apiKey}',
+        formData: formData,
+        source: window.location.href
+      })
+    }
+  );
+  return response.json();
+};`;
+                    navigator.clipboard.writeText(code);
+                    toast.success("Code copied!");
+                  }}
+                  className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Copy Code
+                </button>
+              </div>
+            )}
+
+            {/* Submissions Section */}
+            {integrationSettings?.apiKey && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-800">📥 Recent Form Submissions</h3>
+                  <span className="text-sm bg-purple-200 text-purple-800 px-2 py-1 rounded">
+                    {formSubmissions.length} submissions
+                  </span>
+                </div>
+                
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {formSubmissions.length === 0 ? (
+                    <p className="text-gray-600 text-sm text-center py-4">
+                      No submissions yet. Once forms are submitted, they'll appear here.
+                    </p>
+                  ) : (
+                    formSubmissions.slice(0, 10).map((submission) => (
+                      <div
+                        key={submission.submissionId}
+                        className="p-3 bg-white border border-gray-200 rounded text-sm"
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium text-gray-800">
+                            {submission.data?.email || "No email"}
+                          </span>
+                          <span
+                            className={`text-xs px-2 py-1 rounded ${
+                              submission.processed
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {submission.processed ? "✓ Processed" : "Pending"}
+                          </span>
+                        </div>
+                        <div className="text-gray-600">
+                          {JSON.stringify(submission.data)
+                            .substring(0, 100)
+                            .concat("...")}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(submission.submittedAt).toLocaleString()}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="p-6 border-t border-gray-200 flex justify-end">
+            <button
+              onClick={() => setShowIntegrationModal(false)}
+              className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition font-medium"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentSection = website.sections.find(
     (s) => s.id === selectedElement?.sectionId,
   );
@@ -1404,6 +1722,16 @@ export default function ${componentName}() {
           >
             <FiDownload size={18} />
             Code
+          </button>
+          <button
+            onClick={() => {
+              setShowIntegrationModal(true);
+              loadIntegrationSettings();
+            }}
+            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-lg transition font-semibold"
+            title="Integrate with external websites"
+          >
+            🔌 Integration
           </button>
           <button
             onClick={startTour}
