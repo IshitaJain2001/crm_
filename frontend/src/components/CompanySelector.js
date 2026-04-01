@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
 
 const CompanySelector = ({ token, selectedCompanyId, onChange, label = "Select Company" }) => {
   const [companies, setCompanies] = useState([]);

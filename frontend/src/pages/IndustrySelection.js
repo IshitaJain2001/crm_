@@ -8,7 +8,7 @@ const IndustrySelection = () => {
   const [selectedIndustry, setSelectedIndustry] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const API_URL = 'http://localhost:5000';
+  const API_URL = 'https://crm-1-5el5.onrender.com';
 
   useEffect(() => {
     fetchIndustries();

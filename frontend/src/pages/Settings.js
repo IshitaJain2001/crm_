@@ -8,7 +8,7 @@ import Header from "../components/Header";
 import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
 
 const Settings = () => {
     const { isDark } = useTheme();

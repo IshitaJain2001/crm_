@@ -14,7 +14,7 @@ const SimpleChat = () => {
   const [answer, setAnswer] = useState('');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
 
-  const API_URL = 'http://localhost:5000';
+  const API_URL = 'https://crm-1-5el5.onrender.com';
   const token = localStorage.getItem('token');
 
   useEffect(() => {

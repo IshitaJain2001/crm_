@@ -9,7 +9,7 @@ import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { FcGoogle } from 'react-icons/fc';
 
-const API_URL = process.env.REACT_APP_API_URL || "https://job-portall-zbi3.onrender.com/";
+const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
 
 const Login = () => {
   const [email, setEmail] = useState('');

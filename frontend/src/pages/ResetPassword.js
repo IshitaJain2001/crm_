@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { FiLock, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
 
 const ResetPassword = () => {
   const navigate = useNavigate();

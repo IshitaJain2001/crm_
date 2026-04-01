@@ -10,7 +10,7 @@ import { FiCalendar, FiX, FiCheck, FiUsers } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import { useLayout } from '../context/LayoutContext';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
 
 const Meetings = () => {
   const token = useSelector(state => state.auth.token);

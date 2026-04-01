@@ -6,7 +6,7 @@ import { FiCalendar, FiX, FiPlus } from 'react-icons/fi';
 // eslint-disable-next-line no-unused-vars
 import { FiTrash2 } from 'react-icons/fi';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
 
 const MeetingScheduler = ({ isOpen, onClose, contactEmail, contactName, onSuccess }) => {
   const token = useSelector(state => state.auth.token);

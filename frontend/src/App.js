@@ -66,7 +66,7 @@ function App() {
       try {
         // Make a lightweight validation request
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/auth/validate`,
+          `${process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com"}/api/auth/validate`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
