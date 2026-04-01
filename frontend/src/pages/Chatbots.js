@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getAuthToken, parseAuthUser } from '../utils/authStorage';
+import { isCompanyLead } from '../utils/roles';
+import { API_URL } from '../config/api';
 import { FaComments, FaPlus, FaEdit, FaTrash, FaCopy, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Chatbots = () => {
@@ -29,16 +32,13 @@ const Chatbots = () => {
     }
   });
 
-  const token = localStorage.getItem('token');
+  const token = getAuthToken();
 
   useEffect(() => {
-    // Get user role from localStorage
-    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    const userInfo = parseAuthUser() || {};
     setUserRole(userInfo.role || 'employee');
     fetchChatbots();
   }, []);
-
-  const API_URL = 'https://crm-1-5el5.onrender.com';
 
   const fetchChatbots = async () => {
     try {
@@ -353,10 +353,10 @@ const Chatbots = () => {
           <div>
             <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-2">
               <FaComments size={32} className="text-blue-500" />
-              {userRole === 'superadmin' ? 'Employee Support Chatbots' : 'Live Chatbots'}
+              {isCompanyLead(userRole) ? 'Employee Support Chatbots' : 'Live Chatbots'}
             </h1>
             <p className="text-gray-600 mt-2">
-              {userRole === 'superadmin' 
+              {isCompanyLead(userRole)
                 ? 'Create chatbots to help your employees with FAQs and support'
                 : 'Create and manage chatbots for your website'}
             </p>

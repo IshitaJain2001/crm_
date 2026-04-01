@@ -7,8 +7,7 @@ import EmailComposer from '../components/EmailComposer';
 import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 import { FiMail, FiBarChart2, FiEye, FiMousePointer } from 'react-icons/fi';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
+import { API_URL } from '../config/api';
 
 const EmailTracking = () => {
   const { isDark } = useTheme();

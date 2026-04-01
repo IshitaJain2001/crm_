@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const Company = require('../models/Company');
 const Invitation = require('../models/Invitation');
-const { authMiddleware, superAdminOnly } = require('../middleware/roleAuth');
+const { authMiddleware, companyLeadOnly } = require('../middleware/roleAuth');
 const { sendInvitationEmail } = require('../services/otpService');
 
 const router = express.Router();
@@ -26,7 +26,7 @@ router.get('/profile/me', authMiddleware, async (req, res) => {
 // ============================================================
 // Get all employees in workspace (Super Admin only)
 // ============================================================
-router.get('/', authMiddleware, superAdminOnly, async (req, res) => {
+router.get('/', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { page = 1, limit = 20, status = 'all' } = req.query;
     const company = req.user.company;
@@ -62,7 +62,7 @@ router.get('/', authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Get single employee (Super Admin only)
 // ============================================================
-router.get('/:id', authMiddleware, superAdminOnly, async (req, res) => {
+router.get('/:id', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { id } = req.params;
     const company = req.user.company;
@@ -83,9 +83,9 @@ router.get('/:id', authMiddleware, superAdminOnly, async (req, res) => {
 });
 
 // ============================================================
-// Invite employee via email (Super Admin only)
+// Invite employee via email (Company Admin / HR)
 // ============================================================
-router.post('/invite', authMiddleware, superAdminOnly, async (req, res) => {
+router.post('/invite', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { email, firstName, lastName, department, role } = req.body;
     const company = await Company.findById(req.user.company);
@@ -175,7 +175,7 @@ router.post('/invite', authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Update employee (Super Admin only)
 // ============================================================
-router.put('/:id', authMiddleware, superAdminOnly, async (req, res) => {
+router.put('/:id', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { id } = req.params;
     const { firstName, lastName, department, phone, role } = req.body;
@@ -214,7 +214,7 @@ router.put('/:id', authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Deactivate employee (Super Admin only)
 // ============================================================
-router.patch('/:id/deactivate', authMiddleware, superAdminOnly, async (req, res) => {
+router.patch('/:id/deactivate', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { id } = req.params;
     const company = req.user.company;
@@ -246,7 +246,7 @@ router.patch('/:id/deactivate', authMiddleware, superAdminOnly, async (req, res)
 // ============================================================
 // Activate employee (Super Admin only)
 // ============================================================
-router.patch('/:id/activate', authMiddleware, superAdminOnly, async (req, res) => {
+router.patch('/:id/activate', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { id } = req.params;
     const company = req.user.company;
@@ -273,7 +273,7 @@ router.patch('/:id/activate', authMiddleware, superAdminOnly, async (req, res) =
 // ============================================================
 // Remove employee from workspace (Super Admin only)
 // ============================================================
-router.delete('/:id', authMiddleware, superAdminOnly, async (req, res) => {
+router.delete('/:id', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { id } = req.params;
     const company = req.user.company;
@@ -308,7 +308,7 @@ router.delete('/:id', authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Get pending invitations (Super Admin only)
 // ============================================================
-router.get('/invitations/pending', authMiddleware, superAdminOnly, async (req, res) => {
+router.get('/invitations/pending', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const company = req.user.company;
@@ -341,7 +341,7 @@ router.get('/invitations/pending', authMiddleware, superAdminOnly, async (req, r
 // ============================================================
 // Resend invitation (Super Admin only)
 // ============================================================
-router.post('/invitations/:id/resend', authMiddleware, superAdminOnly, async (req, res) => {
+router.post('/invitations/:id/resend', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { id } = req.params;
     const company = req.user.company;
@@ -389,7 +389,7 @@ router.post('/invitations/:id/resend', authMiddleware, superAdminOnly, async (re
 // ============================================================
 // Revoke invitation (Super Admin only)
 // ============================================================
-router.delete('/invitations/:id', authMiddleware, superAdminOnly, async (req, res) => {
+router.delete('/invitations/:id', authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { id } = req.params;
     const company = req.user.company;

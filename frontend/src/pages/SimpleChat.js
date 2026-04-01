@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getAuthToken, parseAuthUser } from '../utils/authStorage';
+import { isCompanyLead } from '../utils/roles';
+import { API_URL } from '../config/api';
 import { useTheme } from '../context/ThemeContext';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 
@@ -14,11 +17,10 @@ const SimpleChat = () => {
   const [answer, setAnswer] = useState('');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
 
-  const API_URL = 'https://crm-1-5el5.onrender.com';
-  const token = localStorage.getItem('token');
+  const token = getAuthToken();
 
   useEffect(() => {
-    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    const userInfo = parseAuthUser() || {};
     setUserRole(userInfo.role || 'employee');
     initializeChatbot();
   }, []);
@@ -99,7 +101,7 @@ const SimpleChat = () => {
   }
 
   // ADMIN VIEW
-  if (userRole === 'superadmin' || userRole === 'admin') {
+  if (isCompanyLead(userRole)) {
     return (
       <div className={`min-h-screen p-6 ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'}`}>
         <div className="max-w-4xl mx-auto">

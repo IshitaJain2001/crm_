@@ -5,6 +5,7 @@ import { logout } from '../store/authSlice';
 import { useTheme } from '../context/ThemeContext';
 import { useLayout } from '../context/LayoutContext';
 import { FiHome, FiUsers, FiBriefcase, FiTrendingUp, FiActivity, FiCheckSquare, FiLogOut, FiSettings, FiUserCheck, FiFileText, FiMessageSquare, FiStar, FiBarChart2, FiMonitor, FiMenu, FiX } from 'react-icons/fi';
+import { isCompanyLead } from '../utils/roles';
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -43,7 +44,7 @@ const Sidebar = () => {
   ];
 
   // Build menu based on role
-  const menuItems = user?.role === 'superadmin' ? superAdminMenuItems : employeeMenuItems;
+  const menuItems = isCompanyLead(user?.role) ? superAdminMenuItems : employeeMenuItems;
 
   const isActive = (path) => location.pathname === path;
 

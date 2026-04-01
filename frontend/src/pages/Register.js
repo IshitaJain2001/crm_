@@ -45,7 +45,7 @@ const Register = () => {
         password: formData.password
       })).unwrap();
       toast.success('Registration successful!');
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       toast.error(err || 'Registration failed');
     }

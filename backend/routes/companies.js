@@ -115,9 +115,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Company not found' });
     }
 
-    // Only superAdmin can update company
     if (company.superAdmin.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Only superadmin can update company' });
+      return res.status(403).json({ error: 'Only the company owner can update the company' });
     }
 
     company = await Company.findByIdAndUpdate(

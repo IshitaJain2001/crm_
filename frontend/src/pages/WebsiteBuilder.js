@@ -16,8 +16,7 @@ import {
   FiRefreshCw,
   FiDownload,
 } from "react-icons/fi";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
+import { API_URL } from "../config/api";
 
 // Website Templates
 const WEBSITE_TEMPLATES = {
@@ -484,6 +483,9 @@ const WebsiteBuilder = () => {
           }
 
           setWebsite(websiteData);
+          if (websiteData.needsTemplateSelection) {
+            setShowOnboarding(true);
+          }
           setLoading(false);
 
           // Verify with backend in background (don't block UI)
@@ -529,6 +531,9 @@ const WebsiteBuilder = () => {
         }
 
         setWebsite(websiteData);
+        if (websiteData.needsTemplateSelection) {
+          setShowOnboarding(true);
+        }
         localStorage.setItem("websiteBuilderData", JSON.stringify(websiteData));
         console.log("✓ Loaded from backend:", websiteData.title);
         setLastSyncTime(new Date());
@@ -564,6 +569,9 @@ const WebsiteBuilder = () => {
         console.log("Backend has newer data, updating...");
         setWebsite(backendData);
         localStorage.setItem("websiteBuilderData", JSON.stringify(backendData));
+      }
+      if (backendData.needsTemplateSelection) {
+        setShowOnboarding(true);
       }
       setLastSyncTime(new Date());
     } catch (error) {
@@ -634,7 +642,7 @@ const WebsiteBuilder = () => {
     }
 
     const newWebsite = {
-      _id: "new",
+      _id: website?._id && website._id !== "new" ? website._id : "new",
       title: `${template.name} Website`,
       description: `Welcome to my ${template.name} website`,
       sections: sectionsCopy,
@@ -644,6 +652,7 @@ const WebsiteBuilder = () => {
         accent: "#f59e0b",
       },
       isPublished: false,
+      needsTemplateSelection: false,
     };
     console.log("New website created with sections:", newWebsite.sections);
     setWebsite(newWebsite);
@@ -719,6 +728,7 @@ const WebsiteBuilder = () => {
           accent: "#f59e0b",
         },
         isPublished: Boolean(website.isPublished),
+        needsTemplateSelection: Boolean(website.needsTemplateSelection),
       };
 
       console.log("Syncing:", {

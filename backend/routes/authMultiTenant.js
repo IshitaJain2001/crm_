@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Company = require("../models/Company");
@@ -82,6 +83,13 @@ router.post("/register-company", async (req, res) => {
       displayName,
       industry,
       verificationToken,
+      phoneNumber,
+      companySize,
+      country,
+      jobTitle,
+      websiteChoice,
+      existingWebsite,
+      ownerRole,
     } = req.body;
 
     console.log("=== REGISTRATION REQUEST ===");
@@ -152,22 +160,43 @@ router.post("/register-company", async (req, res) => {
       });
     }
 
+    const allowedOwnerRoles = ["admin", "hr"];
+    if (!ownerRole || !allowedOwnerRoles.includes(ownerRole)) {
+      return res.status(400).json({
+        error:
+          "Select whether you are registering as Company Admin or HR. Other team members must join via email invitation.",
+        code: "OWNER_ROLE_REQUIRED",
+      });
+    }
+
+    const trimmedExisting =
+      existingWebsite && String(existingWebsite).trim()
+        ? String(existingWebsite).trim()
+        : "";
+    const useExternalSite =
+      websiteChoice === "existing" && trimmedExisting;
+
     // CREATE COMPANY
     const company = new Company({
       name: companyName,
       displayName: displayName || companyName,
       industry: industry || "generic",
+      companySize: companySize ? String(companySize).trim() : undefined,
+      country: country ? String(country).trim() : undefined,
+      website: useExternalSite ? trimmedExisting : undefined,
     });
 
-    // CREATE USER (Super Admin for this company)
+    // CREATE USER (first workspace owner: Admin or HR only)
     const user = new User({
       name,
       email,
       password,
       company: company._id,
-      role: "superadmin",
+      role: ownerRole,
       emailVerified: true,
       emailVerifiedAt: new Date(),
+      phone: phoneNumber ? String(phoneNumber).trim() : undefined,
+      jobTitle: jobTitle ? String(jobTitle).trim() : undefined,
     });
 
     // Set super admin reference
@@ -199,93 +228,36 @@ router.post("/register-company", async (req, res) => {
       throw new Error("Failed to create company or user - IDs not generated");
     }
 
-    // CREATE DEFAULT WEBSITE
-    console.log("Creating default website...");
-    
-    const sectionData = {
-      id: `hero-${Date.now()}`,
-      type: "hero",
-      title: `Welcome to ${company.name}`,
-      content: "Your company description goes here",
-      order: 1,
-      backgroundColor: "#3b82f6",
-      textColor: "#ffffff",
-      items: [],
-    };
-    
-    console.log("Section data being created:", JSON.stringify(sectionData));
-    console.log("Section data type:", typeof sectionData);
-    
-    // Ensure sections array is correct
-    let sectionsArray = [sectionData];
-    if (typeof sectionsArray[0] === 'string') {
-      console.warn("WARNING: Section is stringified! Parsing...");
-      try {
-        sectionsArray[0] = JSON.parse(sectionsArray[0]);
-      } catch (e) {
-        console.error("Could not parse section:", e.message);
-        sectionsArray = [sectionData];
-      }
-    }
-    
+    // CREATE WEBSITE — builder tenants pick a template in Website Builder; external URL only skips that step
+    const wantsBuilder =
+      !websiteChoice ||
+      websiteChoice === "" ||
+      websiteChoice === "builder";
+    const needsTemplateSelection = wantsBuilder && !useExternalSite;
+
+    console.log("Creating website record...", {
+      needsTemplateSelection,
+      useExternalSite,
+    });
+
     const defaultWebsite = new Website({
       company: company._id,
       title: company.name,
-      description: `Welcome to ${company.name}`,
-      sections: sectionsArray,
+      description: useExternalSite
+        ? `External site: ${trimmedExisting}`
+        : `Welcome to ${company.name}`,
+      sections: [],
       colors: {
         primary: "#3b82f6",
         secondary: "#10b981",
         accent: "#f59e0b",
       },
       isPublished: false,
+      needsTemplateSelection,
     });
 
-    console.log("Website object before save:", {
-      sections: defaultWebsite.sections,
-      sectionsType: typeof defaultWebsite.sections,
-      sectionsIsArray: Array.isArray(defaultWebsite.sections),
-      sectionsLength: defaultWebsite.sections.length,
-      firstSectionType: defaultWebsite.sections.length > 0 ? typeof defaultWebsite.sections[0] : 'N/A',
-      firstSectionValue: defaultWebsite.sections.length > 0 ? JSON.stringify(defaultWebsite.sections[0]).substring(0, 100) : 'N/A',
-    });
-
-    try {
-      await defaultWebsite.save();
-      console.log("✓✓✓ DEFAULT WEBSITE CREATED ✓✓✓");
-      console.log("Website ID:", defaultWebsite._id.toString());
-    } catch (websiteError) {
-      console.error("❌ Website save error:", websiteError.message);
-      console.error("Full error:", websiteError);
-      
-      // If save fails due to sections validation, try direct insert
-      if (websiteError.name === 'ValidationError' && websiteError.message.includes('sections')) {
-        console.log("Attempting direct insert without validation...");
-        try {
-          const result = await Website.collection.insertOne({
-            company: company._id,
-            title: company.name,
-            description: `Welcome to ${company.name}`,
-            sections: [sectionData],
-            colors: {
-              primary: "#3b82f6",
-              secondary: "#10b981",
-              accent: "#f59e0b",
-            },
-            isPublished: false,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-          console.log("✓✓✓ DEFAULT WEBSITE CREATED (Direct Insert) ✓✓✓");
-          console.log("Website ID:", result.insertedId.toString());
-        } catch (insertError) {
-          console.error("Direct insert also failed:", insertError.message);
-          throw insertError;
-        }
-      } else {
-        throw websiteError;
-      }
-    }
+    await defaultWebsite.save();
+    console.log("✓ Website created:", defaultWebsite._id.toString());
 
     if (!user.company) {
       console.error("❌ CRITICAL: User company reference not set");
@@ -593,12 +565,11 @@ router.post("/google-login", async (req, res) => {
       const newUser = new User({
         name: displayName || email.split("@")[0],
         email: email.toLowerCase(),
-        password: null, // Google auth - no password
+        password: crypto.randomBytes(32).toString("hex"),
         company: invitation.company._id,
         role: invitation.role,
         emailVerified: true,
         emailVerifiedAt: new Date(),
-        googleAuth: true,
         invitationToken: invitation._id,
       });
 

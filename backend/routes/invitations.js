@@ -11,7 +11,7 @@ const router = express.Router();
 // ============================================================
 // Send Invitation (Super Admin only)
 // ============================================================
-router.post('/', authMiddleware, requireRole('superadmin'), async (req, res) => {
+router.post('/', authMiddleware, requireRole('superadmin', 'admin', 'hr'), async (req, res) => {
   try {
     const { email, role, message } = req.body;
     const invitedByUser = req.user;
@@ -94,7 +94,7 @@ router.post('/', authMiddleware, requireRole('superadmin'), async (req, res) => 
 // ============================================================
 // List Invitations (Super Admin only)
 // ============================================================
-router.get('/', authMiddleware, requireRole('superadmin'), async (req, res) => {
+router.get('/', authMiddleware, requireRole('superadmin', 'admin', 'hr'), async (req, res) => {
   try {
     const { status = 'pending', page = 1, limit = 20 } = req.query;
     const company = req.user.company;
@@ -159,7 +159,7 @@ router.get('/token/:token', async (req, res) => {
 // ============================================================
 // Resend Invitation (Super Admin only)
 // ============================================================
-router.post('/:id/resend', authMiddleware, requireRole('superadmin'), async (req, res) => {
+router.post('/:id/resend', authMiddleware, requireRole('superadmin', 'admin', 'hr'), async (req, res) => {
   try {
     const { id } = req.params;
     const company = req.user.company;
@@ -212,7 +212,7 @@ router.post('/:id/resend', authMiddleware, requireRole('superadmin'), async (req
 // ============================================================
 // Revoke Invitation (Super Admin only)
 // ============================================================
-router.delete('/:id', authMiddleware, requireRole('superadmin'), async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('superadmin', 'admin', 'hr'), async (req, res) => {
   try {
     const { id } = req.params;
     const company = req.user.company;

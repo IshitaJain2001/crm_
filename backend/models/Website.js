@@ -45,6 +45,11 @@ const websiteSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    /** When true, Website Builder shows template selection before editing (new tenants). */
+    needsTemplateSelection: {
+      type: Boolean,
+      default: false,
+    },
     publishedUrl: String,
     analytics: {
       views: {

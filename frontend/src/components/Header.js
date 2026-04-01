@@ -4,8 +4,7 @@ import axios from "axios";
 import { FiBell, FiSearch, FiX, FiMoon, FiSun } from "react-icons/fi";
 import { useTheme } from "../context/ThemeContext";
 import { useLayout } from "../context/LayoutContext";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
+import { API_URL } from "../config/api";
 
 const Header = ({ title = "Dashboard" }) => {
   const token = useSelector((state) => state.auth.token);

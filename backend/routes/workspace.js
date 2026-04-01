@@ -1,7 +1,7 @@
 const express = require("express");
 const Company = require("../models/Company");
 const User = require("../models/User");
-const { authMiddleware, superAdminOnly } = require("../middleware/roleAuth");
+const { authMiddleware, companyLeadOnly } = require("../middleware/roleAuth");
 
 const router = express.Router();
 
@@ -119,7 +119,7 @@ router.get("/members", authMiddleware, async (req, res) => {
 // ============================================================
 // Update workspace company (Super Admin only)
 // ============================================================
-router.put("/company", authMiddleware, superAdminOnly, async (req, res) => {
+router.put("/company", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { displayName, plan } = req.body;
 
@@ -152,7 +152,7 @@ router.put("/company", authMiddleware, superAdminOnly, async (req, res) => {
 router.delete(
   "/members/:userId",
   authMiddleware,
-  superAdminOnly,
+  companyLeadOnly,
   async (req, res) => {
     try {
       const { userId } = req.params;

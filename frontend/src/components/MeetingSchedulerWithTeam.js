@@ -5,8 +5,7 @@ import toast from "react-hot-toast";
 import { FiCalendar, FiX, FiCheckCircle, FiSearch } from "react-icons/fi";
 // eslint-disable-next-line no-unused-vars
 import { FiPlus, FiAlertCircle } from "react-icons/fi";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
+import { API_URL } from "../config/api";
 
 const MeetingSchedulerWithTeam = ({ isOpen, onClose, onSuccess }) => {
   const token = useSelector((state) => state.auth.token);

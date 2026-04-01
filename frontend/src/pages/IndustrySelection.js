@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { API_URL } from '../config/api';
 
 const IndustrySelection = () => {
   const [industries, setIndustries] = useState([]);
   const [selectedIndustry, setSelectedIndustry] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const API_URL = 'https://crm-1-5el5.onrender.com';
 
   useEffect(() => {
     fetchIndustries();

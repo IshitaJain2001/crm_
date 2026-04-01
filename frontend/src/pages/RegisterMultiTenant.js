@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
+import { setSessionAuth } from "../store/authSlice";
+import { API_URL } from "../config/api";
 
 const RegisterMultiTenant = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 2.5: Website Choice, 3: Company & Password
   const [loading, setLoading] = useState(false);
   const [industries, setIndustries] = useState([]);
@@ -27,11 +30,22 @@ const RegisterMultiTenant = () => {
   const [country, setCountry] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  /** Only admin or HR may register a new company workspace */
+  const [ownerRole, setOwnerRole] = useState("admin");
 
-  // Load industries on mount
+  // Load industries on mount; prefill industry from /get-started or localStorage
   React.useEffect(() => {
     fetchIndustries();
   }, []);
+
+  React.useEffect(() => {
+    const fromRoute = location.state?.industry;
+    const fromStorage = localStorage.getItem("selectedIndustry");
+    const pref = fromRoute || fromStorage;
+    if (pref && typeof pref === "string") {
+      setIndustry(pref);
+    }
+  }, [location.state]);
 
   const fetchIndustries = async () => {
     try {
@@ -130,6 +144,11 @@ const RegisterMultiTenant = () => {
         return;
       }
 
+      if (!ownerRole || !["admin", "hr"].includes(ownerRole)) {
+        toast.error("Choose whether you are registering as Company Admin or HR");
+        return;
+      }
+
       if (industry === "others" && !customIndustry.trim()) {
         toast.error("Please specify your business type");
         return;
@@ -151,20 +170,26 @@ const RegisterMultiTenant = () => {
           country,
           jobTitle,
           verificationToken,
+          websiteChoice,
+          existingWebsite:
+            websiteChoice === "existing" ? existingWebsite.trim() : undefined,
+          ownerRole,
         },
       );
 
-      // Save token to localStorage
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      localStorage.setItem("company", JSON.stringify(response.data.company));
+      dispatch(
+        setSessionAuth({
+          token: response.data.token,
+          user: response.data.user,
+          company: response.data.company,
+        }),
+      );
 
       toast.success(response.data.message);
 
-      // Redirect to dashboard
       setTimeout(() => {
-        navigate("/dashboard");
-      }, 500);
+        navigate("/", { replace: true });
+      }, 400);
     } catch (error) {
       const errorCode = error.response?.data?.code;
       const errorMsg = error.response?.data?.error;
@@ -198,6 +223,12 @@ const RegisterMultiTenant = () => {
             </h1>
             <p className="text-center text-gray-600 mb-8">
               Step 1 of 3: Email Verification
+            </p>
+            <p className="text-center text-sm text-gray-500 mb-6">
+              New here?{" "}
+              <Link to="/get-started" className="text-blue-600 font-semibold hover:underline">
+                Start by choosing your industry
+              </Link>
             </p>
 
             <form onSubmit={handleSendOTP} className="space-y-4">
@@ -376,6 +407,37 @@ const RegisterMultiTenant = () => {
             </p>
 
             <form onSubmit={handleRegisterCompany} className="space-y-4">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-2">
+                <p className="text-sm font-medium text-gray-800 mb-3">
+                  You are registering the company as <span className="text-red-600">*</span>
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                    <input
+                      type="radio"
+                      name="ownerRole"
+                      value="admin"
+                      checked={ownerRole === "admin"}
+                      onChange={() => setOwnerRole("admin")}
+                    />
+                    <span className="text-sm font-medium text-gray-800">Company Admin</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                    <input
+                      type="radio"
+                      name="ownerRole"
+                      value="hr"
+                      checked={ownerRole === "hr"}
+                      onChange={() => setOwnerRole("hr")}
+                    />
+                    <span className="text-sm font-medium text-gray-800">HR</span>
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-gray-600">
+                  Sales and other roles join only through an email invitation from Admin/HR.
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Business Type
@@ -599,7 +661,7 @@ const RegisterMultiTenant = () => {
 
               <button
                 type="button"
-                onClick={() => setStep(2)}
+                onClick={() => setStep(2.5)}
                 className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded-lg transition"
               >
                 Back

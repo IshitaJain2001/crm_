@@ -12,9 +12,9 @@ import {
   FiTrendingUp, FiDollarSign, FiUsers, FiCheckCircle,
   FiCalendar, FiMail, FiActivity, FiArrowRight, FiTarget
 } from 'react-icons/fi';
+import { API_URL } from '../config/api';
 
 const Dashboard = () => {
-  const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
   const token = useSelector(state => state.auth.token);
   const user = useSelector(state => state.auth.user);
   const { isDark } = useTheme();

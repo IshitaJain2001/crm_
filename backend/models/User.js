@@ -44,6 +44,7 @@ const userSchema = new mongoose.Schema({
   },
   
   phone: String,
+  jobTitle: String,
   avatar: String,
   
   // Email verification

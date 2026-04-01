@@ -166,7 +166,7 @@ router.put('/:conversationId', authMiddleware, async (req, res) => {
 });
 
 // ASSIGN - Assign conversation to agent
-router.post('/:conversationId/assign', authMiddleware, requireRole('admin', 'superadmin'), async (req, res) => {
+router.post('/:conversationId/assign', authMiddleware, requireRole('admin', 'superadmin', 'hr'), async (req, res) => {
   try {
     const { agentId } = req.body;
 

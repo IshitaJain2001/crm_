@@ -7,8 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLayout } from '../context/LayoutContext';
 import { FiPlus, FiTrash2, FiEdit2, FiMail, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
+import { API_URL } from '../config/api';
 
 const Employees = () => {
   const { isDark } = useTheme();

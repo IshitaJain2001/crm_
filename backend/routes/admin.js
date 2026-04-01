@@ -6,9 +6,9 @@ const Contact = require("../models/Contact");
 const Deal = require("../models/Deal");
 const Activity = require("../models/Activity");
 const {
-    authMiddleware,
-    superAdminOnly,
-    adminOnly,
+  authMiddleware,
+  companyLeadOnly,
+  adminOnly,
     canManageUser,
     PERMISSIONS,
 } = require("../middleware/roleAuth");
@@ -108,7 +108,7 @@ router.post("/users", authMiddleware, adminOnly, async (req, res) => {
 router.patch(
     "/users/:id/role",
     authMiddleware,
-    superAdminOnly,
+    companyLeadOnly,
     async (req, res) => {
         try {
             const { role } = req.body;
@@ -120,11 +120,10 @@ router.patch(
                 });
             }
 
-            // SECURITY: Prevent superadmin from changing their own role
             if (req.params.id === req.user.id) {
                 return res.status(403).json({
                     error:
-                        "Superadmin cannot change their own role. Contact another superadmin for role changes.",
+                        "You cannot change your own role. Ask another company admin if needed.",
                     code: "SELF_ROLE_CHANGE_DENIED",
                 });
             }
@@ -244,15 +243,24 @@ router.get("/roles", authMiddleware, (req, res) => {
 router.delete(
     "/users/:id",
     authMiddleware,
-    superAdminOnly,
+    companyLeadOnly,
     async (req, res) => {
         try {
             const userId = req.params.id;
 
-            // Cannot delete yourself
             if (userId === req.user.id) {
                 return res.status(403).json({
                     error: "Cannot delete yourself",
+                });
+            }
+
+            const targetUser = await User.findById(userId);
+            if (!targetUser) {
+                return res.status(404).json({ error: "User not found" });
+            }
+            if (targetUser.company.toString() !== req.user.company.toString()) {
+                return res.status(403).json({
+                    error: "Cannot delete users outside your company",
                 });
             }
 
@@ -271,7 +279,7 @@ router.delete(
 router.post(
     "/company/unregister/request",
     authMiddleware,
-    superAdminOnly,
+    companyLeadOnly,
     async (req, res) => {
         try {
             const userId = req.user.id;
@@ -308,7 +316,7 @@ router.post(
 router.post(
     "/company/unregister/verify",
     authMiddleware,
-    superAdminOnly,
+    companyLeadOnly,
     async (req, res) => {
         try {
             const { otp } = req.body;
@@ -350,7 +358,7 @@ router.post(
             console.log("Deleting all company employees...");
             const deletedUsers = await User.deleteMany({
                 company: company._id,
-                role: { $ne: "superadmin" }, // Don't delete superadmin here (we'll do it separately)
+                _id: { $ne: userId },
             });
             console.log(`✓ Deleted ${deletedUsers.deletedCount} employees`);
 
@@ -369,11 +377,9 @@ router.post(
             await Company.findByIdAndRemove(company._id);
             console.log(`✓ Company deleted`);
 
-            // 4. Delete the superadmin user account
-            // This allows the user to register again with the same email
-            console.log("Deleting superadmin user account...");
+            console.log("Deleting company owner account...");
             await User.findByIdAndRemove(userId);
-            console.log(`✓ Superadmin deleted`);
+            console.log(`✓ Owner account deleted`);
 
             console.log(`✓✓✓ COMPANY UNREGISTRATION COMPLETE ✓✓✓\n`);
 
@@ -400,7 +406,7 @@ router.post(
 router.get(
     "/company/export/json",
     authMiddleware,
-    superAdminOnly,
+    companyLeadOnly,
     async (req, res) => {
         try {
             const company = await Company.findOne({ superAdmin: req.user.id });
@@ -452,7 +458,7 @@ router.get(
 router.get(
     "/company/export/csv",
     authMiddleware,
-    superAdminOnly,
+    companyLeadOnly,
     async (req, res) => {
         try {
             const company = await Company.findOne({ superAdmin: req.user.id });

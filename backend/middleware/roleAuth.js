@@ -146,7 +146,7 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-// Super Admin only
+// Super Admin only (legacy / strict)
 const superAdminOnly = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
@@ -156,6 +156,22 @@ const superAdminOnly = (req, res, next) => {
     return res.status(403).json({ error: "Super Admin access required" });
   }
 
+  next();
+};
+
+/** Company registration owner + HR: can invite, manage site, settings (legacy superadmin included) */
+const COMPANY_LEAD_ROLES = ["superadmin", "admin", "hr"];
+
+const companyLeadOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  if (!COMPANY_LEAD_ROLES.includes(req.user.role)) {
+    return res.status(403).json({
+      error:
+        "Access denied. Only company Admin or HR can perform this action.",
+    });
+  }
   next();
 };
 
@@ -181,6 +197,8 @@ module.exports = {
   requirePermission,
   adminOnly,
   superAdminOnly,
+  companyLeadOnly,
+  COMPANY_LEAD_ROLES,
   getUserPermissions,
   hasPermission,
   canManageUser,

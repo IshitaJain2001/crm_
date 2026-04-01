@@ -5,8 +5,8 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
+import { isCompanyLead } from "../utils/roles";
+import { API_URL } from "../config/api";
 
 const Feedback = () => {
   const { isDark } = useTheme();
@@ -152,7 +152,7 @@ const Feedback = () => {
     return labels[category] || category;
   };
 
-  if (user?.role !== "superadmin") {
+  if (!isCompanyLead(user?.role)) {
     return (
       <div className={`h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
         <Sidebar />
@@ -162,7 +162,7 @@ const Feedback = () => {
               Access Denied
             </h2>
             <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-              Only superadmins can access feedback
+              Only company Admin or HR can access feedback
             </p>
           </div>
         </div>

@@ -3,8 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { FiMail, FiArrowLeft } from 'react-icons/fi';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
+import { API_URL } from '../config/api';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();

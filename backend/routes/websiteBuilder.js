@@ -2,7 +2,7 @@ const express = require("express");
 const Website = require("../models/Website");
 const Company = require("../models/Company");
 const Contact = require("../models/Contact");
-const { authMiddleware, superAdminOnly } = require("../middleware/roleAuth");
+const { authMiddleware, companyLeadOnly } = require("../middleware/roleAuth");
 const crypto = require("crypto");
 
 const router = express.Router();
@@ -20,35 +20,23 @@ function generateAPISecret() {
 // ============================================================
 // Get or Create Website for Company
 // ============================================================
-router.get("/my-website", authMiddleware, superAdminOnly, async (req, res) => {
+router.get("/my-website", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
-    const company = await Company.findOne({ superAdmin: req.user.id });
+    const company = await Company.findById(req.user.company);
 
     if (!company) {
-      return res
-        .status(404)
-        .json({ error: "No company found under your admin" });
+      return res.status(404).json({ error: "Company not found" });
     }
 
     let website = await Website.findOne({ company: company._id });
 
     if (!website) {
-      // Create default website
       website = new Website({
         company: company._id,
         title: company.name,
         description: `Welcome to ${company.name}`,
-        sections: [
-          {
-            id: "hero-1",
-            type: "hero",
-            title: "Welcome to " + company.name,
-            content: "Your company description goes here",
-            order: 1,
-            backgroundColor: "#3b82f6",
-            textColor: "#ffffff",
-          },
-        ],
+        sections: [],
+        needsTemplateSelection: true,
       });
 
       await website.save();
@@ -63,17 +51,15 @@ router.get("/my-website", authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Update Website Section
 // ============================================================
-router.put("/section/:sectionId", authMiddleware, superAdminOnly, async (req, res) => {
+router.put("/section/:sectionId", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { sectionId } = req.params;
     const { title, content, backgroundColor, textColor, items } = req.body;
 
-    const company = await Company.findOne({ superAdmin: req.user.id });
+    const company = await Company.findById(req.user.company);
 
     if (!company) {
-      return res
-        .status(404)
-        .json({ error: "No company found under your admin" });
+      return res.status(404).json({ error: "Company not found" });
     }
 
     const website = await Website.findOne({ company: company._id });
@@ -114,7 +100,7 @@ router.put("/section/:sectionId", authMiddleware, superAdminOnly, async (req, re
 // ============================================================
 // Add New Section
 // ============================================================
-router.post("/section", authMiddleware, superAdminOnly, async (req, res) => {
+router.post("/section", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { type, title, content } = req.body;
 
@@ -124,12 +110,10 @@ router.post("/section", authMiddleware, superAdminOnly, async (req, res) => {
         .json({ error: "Section type and title are required" });
     }
 
-    const company = await Company.findOne({ superAdmin: req.user.id });
+    const company = await Company.findById(req.user.company);
 
     if (!company) {
-      return res
-        .status(404)
-        .json({ error: "No company found under your admin" });
+      return res.status(404).json({ error: "Company not found" });
     }
 
     const website = await Website.findOne({ company: company._id });
@@ -165,16 +149,14 @@ router.post("/section", authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Delete Section
 // ============================================================
-router.delete("/section/:sectionId", authMiddleware, superAdminOnly, async (req, res) => {
+router.delete("/section/:sectionId", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { sectionId } = req.params;
 
-    const company = await Company.findOne({ superAdmin: req.user.id });
+    const company = await Company.findById(req.user.company);
 
     if (!company) {
-      return res
-        .status(404)
-        .json({ error: "No company found under your admin" });
+      return res.status(404).json({ error: "Company not found" });
     }
 
     const website = await Website.findOne({ company: company._id });
@@ -198,7 +180,7 @@ router.delete("/section/:sectionId", authMiddleware, superAdminOnly, async (req,
 // ============================================================
 // Reorder Sections
 // ============================================================
-router.post("/reorder", authMiddleware, superAdminOnly, async (req, res) => {
+router.post("/reorder", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { sectionIds } = req.body;
 
@@ -206,12 +188,10 @@ router.post("/reorder", authMiddleware, superAdminOnly, async (req, res) => {
       return res.status(400).json({ error: "Invalid section order" });
     }
 
-    const company = await Company.findOne({ superAdmin: req.user.id });
+    const company = await Company.findById(req.user.company);
 
     if (!company) {
-      return res
-        .status(404)
-        .json({ error: "No company found under your admin" });
+      return res.status(404).json({ error: "Company not found" });
     }
 
     const website = await Website.findOne({ company: company._id });
@@ -244,16 +224,14 @@ router.post("/reorder", authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Update Website Colors
 // ============================================================
-router.put("/colors", authMiddleware, superAdminOnly, async (req, res) => {
+router.put("/colors", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { primary, secondary, accent } = req.body;
 
-    const company = await Company.findOne({ superAdmin: req.user.id });
+    const company = await Company.findById(req.user.company);
 
     if (!company) {
-      return res
-        .status(404)
-        .json({ error: "No company found under your admin" });
+      return res.status(404).json({ error: "Company not found" });
     }
 
     const website = await Website.findOne({ company: company._id });
@@ -280,9 +258,10 @@ router.put("/colors", authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Update Full Website (Auto-save)
 // ============================================================
-router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
+router.put("/update-full", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
-    let { title, description, sections, colors, isPublished } = req.body;
+    let { title, description, sections, colors, isPublished, needsTemplateSelection } =
+      req.body;
 
     // Parse sections if it's a string
     if (typeof sections === "string") {
@@ -321,12 +300,10 @@ router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
       return true;
     });
 
-    const company = await Company.findOne({ superAdmin: req.user.id });
+    const company = await Company.findById(req.user.company);
 
     if (!company) {
-      return res
-        .status(404)
-        .json({ error: "No company found under your admin" });
+      return res.status(404).json({ error: "Company not found" });
     }
 
     let website = await Website.findOne({ company: company._id });
@@ -348,6 +325,9 @@ router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
     
     if (colors) website.colors = colors;
     if (isPublished !== undefined) website.isPublished = isPublished;
+    if (needsTemplateSelection !== undefined) {
+      website.needsTemplateSelection = Boolean(needsTemplateSelection);
+    }
 
     await website.save();
 
@@ -367,14 +347,12 @@ router.put("/update-full", authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Publish Website
 // ============================================================
-router.post("/publish", authMiddleware, superAdminOnly, async (req, res) => {
+router.post("/publish", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
-    const company = await Company.findOne({ superAdmin: req.user.id });
+    const company = await Company.findById(req.user.company);
 
     if (!company) {
-      return res
-        .status(404)
-        .json({ error: "No company found under your admin" });
+      return res.status(404).json({ error: "Company not found" });
     }
 
     const website = await Website.findOne({ company: company._id });
@@ -403,15 +381,13 @@ router.post("/publish", authMiddleware, superAdminOnly, async (req, res) => {
 router.post(
   "/integration/generate-api-key",
   authMiddleware,
-  superAdminOnly,
+  companyLeadOnly,
   async (req, res) => {
     try {
-      const company = await Company.findOne({ superAdmin: req.user.id });
+      const company = await Company.findById(req.user.company);
 
       if (!company) {
-        return res
-          .status(404)
-          .json({ error: "No company found under your admin" });
+        return res.status(404).json({ error: "Company not found" });
       }
 
       const website = await Website.findOne({ company: company._id });
@@ -451,15 +427,13 @@ router.post(
 router.get(
   "/integration/settings",
   authMiddleware,
-  superAdminOnly,
+  companyLeadOnly,
   async (req, res) => {
     try {
-      const company = await Company.findOne({ superAdmin: req.user.id });
+      const company = await Company.findById(req.user.company);
 
       if (!company) {
-        return res
-          .status(404)
-          .json({ error: "No company found under your admin" });
+        return res.status(404).json({ error: "Company not found" });
       }
 
       const website = await Website.findOne({ company: company._id });
@@ -488,7 +462,7 @@ router.get(
 router.put(
   "/integration/form-mappings",
   authMiddleware,
-  superAdminOnly,
+  companyLeadOnly,
   async (req, res) => {
     try {
       const { formMappings } = req.body;
@@ -497,12 +471,10 @@ router.put(
         return res.status(400).json({ error: "formMappings must be an array" });
       }
 
-      const company = await Company.findOne({ superAdmin: req.user.id });
+      const company = await Company.findById(req.user.company);
 
       if (!company) {
-        return res
-          .status(404)
-          .json({ error: "No company found under your admin" });
+        return res.status(404).json({ error: "Company not found" });
       }
 
       const website = await Website.findOne({ company: company._id });
@@ -645,18 +617,16 @@ router.post("/api/form-submission", async (req, res) => {
 router.get(
   "/integration/submissions",
   authMiddleware,
-  superAdminOnly,
+  companyLeadOnly,
   async (req, res) => {
     try {
       const { page = 1, limit = 20, processed } = req.query;
       const skip = (page - 1) * limit;
 
-      const company = await Company.findOne({ superAdmin: req.user.id });
+      const company = await Company.findById(req.user.company);
 
       if (!company) {
-        return res
-          .status(404)
-          .json({ error: "No company found under your admin" });
+        return res.status(404).json({ error: "Company not found" });
       }
 
       const website = await Website.findOne({ company: company._id });
@@ -712,17 +682,15 @@ router.get(
 router.put(
   "/integration/submissions/:submissionId/process",
   authMiddleware,
-  superAdminOnly,
+  companyLeadOnly,
   async (req, res) => {
     try {
       const { submissionId } = req.params;
 
-      const company = await Company.findOne({ superAdmin: req.user.id });
+      const company = await Company.findById(req.user.company);
 
       if (!company) {
-        return res
-          .status(404)
-          .json({ error: "No company found under your admin" });
+        return res.status(404).json({ error: "Company not found" });
       }
 
       const website = await Website.findOne({ company: company._id });

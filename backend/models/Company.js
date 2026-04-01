@@ -41,6 +41,9 @@ const companySchema = new mongoose.Schema({
     default: 'generic'
     // Allows any custom industry value, not restricted to enum
   },
+
+  companySize: String,
+  country: String,
   
   maxUsers: {
     type: Number,

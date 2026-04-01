@@ -2,7 +2,7 @@ const express = require("express");
 const Feedback = require("../models/Feedback");
 const Company = require("../models/Company");
 const User = require("../models/User");
-const { authMiddleware, superAdminOnly } = require("../middleware/roleAuth");
+const { authMiddleware, companyLeadOnly } = require("../middleware/roleAuth");
 const { sendFeedbackNotificationEmail, sendFeedbackConfirmationEmail } = require("../services/emailService");
 
 const router = express.Router();
@@ -10,7 +10,7 @@ const router = express.Router();
 // ============================================================
 // Submit Feedback (Superadmin only)
 // ============================================================
-router.post("/submit", authMiddleware, superAdminOnly, async (req, res) => {
+router.post("/submit", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const { rating, category, subject, message } = req.body;
 
@@ -96,7 +96,7 @@ router.post("/submit", authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Get All Feedback for Superadmin (their own feedback)
 // ============================================================
-router.get("/my-feedback", authMiddleware, superAdminOnly, async (req, res) => {
+router.get("/my-feedback", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const feedback = await Feedback.find({
       superAdmin: req.user.id,
@@ -130,7 +130,7 @@ router.get("/my-feedback", authMiddleware, superAdminOnly, async (req, res) => {
 // ============================================================
 // Get Single Feedback
 // ============================================================
-router.get("/:id", authMiddleware, superAdminOnly, async (req, res) => {
+router.get("/:id", authMiddleware, companyLeadOnly, async (req, res) => {
   try {
     const feedback = await Feedback.findOne({
       _id: req.params.id,

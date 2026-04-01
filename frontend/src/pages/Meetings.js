@@ -9,8 +9,8 @@ import toast from 'react-hot-toast';
 import { FiCalendar, FiX, FiCheck, FiUsers } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import { useLayout } from '../context/LayoutContext';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
+import { isCompanyLead } from '../utils/roles';
+import { API_URL } from '../config/api';
 
 const Meetings = () => {
   const token = useSelector(state => state.auth.token);
@@ -122,7 +122,7 @@ const Meetings = () => {
               >
                 <FiCalendar size={18} /> New Meeting
               </button>
-              {user?.role === 'superadmin' && (
+              {isCompanyLead(user?.role) && (
                 <button
                   onClick={() => setShowTeamScheduler(true)}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 font-semibold text-sm transition"

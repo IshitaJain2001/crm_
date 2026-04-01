@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { FiPlus, FiTrash2, FiEye } from "react-icons/fi";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
+import { API_URL } from "../config/api";
 
 const WebsiteBuilder = ({ token }) => {
   const [website, setWebsite] = useState(null);

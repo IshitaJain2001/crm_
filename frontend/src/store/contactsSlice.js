@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
+import { API_URL } from '../config/api';
 
 export const fetchContacts = createAsyncThunk(
   'contacts/fetchContacts',

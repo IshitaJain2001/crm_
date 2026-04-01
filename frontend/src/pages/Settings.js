@@ -7,8 +7,8 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
+import { isCompanyLead } from "../utils/roles";
+import { API_URL } from "../config/api";
 
 const Settings = () => {
     const { isDark } = useTheme();
@@ -29,6 +29,11 @@ const Settings = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [integrationSettings, setIntegrationSettings] = useState(null);
     const [formSubmissions, setFormSubmissions] = useState([]);
+
+    const ownerId = company?.superAdmin?._id ?? company?.superAdmin;
+    const isWorkspaceOwner = Boolean(
+        ownerId && user?.id && String(ownerId) === String(user.id)
+    );
 
     useEffect(() => {
         fetchWorkspaceData();
@@ -256,7 +261,7 @@ const Settings = () => {
                                 <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
                                     Workspace
                                 </h2>
-                                {!editMode && (
+                                {!editMode && isCompanyLead(user?.role) && (
                                     <button
                                         onClick={() => setEditMode(true)}
                                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
@@ -411,8 +416,8 @@ const Settings = () => {
                             </p>
                         </div>
 
-                        {/* Export Data - Only for Super Admin */}
-                        {user?.role === "superadmin" && (
+                        {/* Export — company owner only (backend enforces) */}
+                        {isWorkspaceOwner && (
                             <div className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 border-l-4 border-blue-500 rounded-lg p-6 mt-6 mb-6">
                                 <h2 className="text-2xl font-bold text-blue-800 dark:text-blue-400 mb-4">
                                     Export Company Data
@@ -459,8 +464,8 @@ const Settings = () => {
                             </div>
                         )}
 
-                        {/* Danger Zone - Only for Super Admin */}
-                        {user?.role === "superadmin" && (
+                        {/* Danger zone — company owner only */}
+                        {isWorkspaceOwner && (
                             <div className="bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border-l-4 border-red-500 rounded-lg p-6 mt-6">
                                 <h2 className="text-2xl font-bold text-red-800 dark:text-red-400 mb-4">
                                     Danger Zone
@@ -472,7 +477,7 @@ const Settings = () => {
                                     <p className="text-gray-700 dark:text-gray-300 mb-4">
                                         Once you unregister your company, this action cannot be
                                         undone. All company data, team members, settings, and your
-                                        superadmin account will be permanently deleted. You will need
+                                        owner account will be permanently deleted. You will need
                                         to register as a new user. We'll send you an OTP to verify
                                         this critical action.
                                     </p>
@@ -484,6 +489,122 @@ const Settings = () => {
                                     </button>
                                 </div>
                             </div>
+                        )}
+
+                        {isCompanyLead(user?.role) && (
+                        <div className={`rounded-lg shadow p-6 mb-6 ${isDark ? "bg-gray-800" : "bg-white"}`}>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}>
+                                    🔌 Website Integration
+                                </h2>
+                                <button
+                                    type="button"
+                                    onClick={loadIntegrationSettings}
+                                    className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                    Refresh
+                                </button>
+                            </div>
+
+                            <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                                Integrate your website forms with CRM. Collect leads automatically from your website.
+                            </p>
+
+                            <div className={`border rounded-lg p-4 mb-4 ${isDark ? "bg-gray-700 border-gray-600" : "bg-blue-50 border-blue-200"}`}>
+                                <h3 className={`font-bold mb-3 ${isDark ? "text-blue-400" : "text-blue-800"}`}>
+                                    📝 API Credentials
+                                </h3>
+
+                                {integrationSettings?.apiKey ? (
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                                                API Key
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={integrationSettings.apiKey}
+                                                    readOnly
+                                                    className={`flex-1 px-3 py-2 border rounded-lg font-mono text-sm ${isDark ? "bg-gray-600 border-gray-500 text-white" : "bg-gray-50 border-gray-300 text-gray-900"}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(integrationSettings.apiKey);
+                                                        toast.success("API key copied!");
+                                                    }}
+                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={generateNewAPIKey}
+                                            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+                                        >
+                                            🔄 Regenerate API Key
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4">
+                                        <p className={`mb-4 ${isDark ? "text-gray-400" : "text-gray-700"}`}>
+                                            No API credentials yet
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={generateNewAPIKey}
+                                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
+                                        >
+                                            🔑 Generate API Credentials
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {integrationSettings?.apiKey && (
+                                <div className={`border rounded-lg p-4 ${isDark ? "bg-gray-700 border-gray-600" : "bg-purple-50 border-purple-200"}`}>
+                                    <h3 className={`font-bold mb-3 ${isDark ? "text-purple-400" : "text-purple-800"}`}>
+                                        📥 Recent Form Submissions ({formSubmissions.length})
+                                    </h3>
+
+                                    {formSubmissions.length === 0 ? (
+                                        <p className={`text-sm text-center py-4 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                                            No submissions yet
+                                        </p>
+                                    ) : (
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {formSubmissions.slice(0, 5).map((submission) => (
+                                                <div
+                                                    key={submission.submissionId}
+                                                    className={`p-3 rounded text-sm border ${isDark ? "bg-gray-600 border-gray-500" : "bg-white border-purple-200"}`}
+                                                >
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <span className={`font-medium ${isDark ? "text-white" : "text-gray-800"}`}>
+                                                            {submission.data?.email || "No email"}
+                                                        </span>
+                                                        <span
+                                                            className={`text-xs px-2 py-1 rounded ${
+                                                                submission.processed
+                                                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                                                    : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                                                            }`}
+                                                        >
+                                                            {submission.processed ? "✓ Processed" : "Pending"}
+                                                        </span>
+                                                    </div>
+                                                    <div className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                                                        {new Date(submission.submittedAt).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         )}
                     </div>
                 </div>
@@ -509,7 +630,7 @@ const Settings = () => {
                                         <li>• All pending invitations</li>
                                         <li>• All data and records</li>
                                         <li>• All integrations and settings</li>
-                                        <li>• Your superadmin user account</li>
+                                        <li>• Your owner user account</li>
                                     </ul>
                                 </div>
                                 <p className="text-gray-700 dark:text-gray-300 mb-6">
@@ -582,124 +703,13 @@ const Settings = () => {
                                             : "Confirm Unregistration"}
                                     </button>
                                 </div>
-                                </div>
-                                )}
-                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
-                                {/* Website Integration Settings */}
-                                <div className={`rounded-lg shadow p-6 mb-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-                                <div className="flex justify-between items-center mb-4">
-                                <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                                🔌 Website Integration
-                                </h2>
-                                <button
-                                onClick={loadIntegrationSettings}
-                                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm"
-                                >
-                                Refresh
-                                </button>
-                                </div>
-
-                                <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Integrate your website forms with CRM. Collect leads automatically from your website.
-                                </p>
-
-                                {/* API Credentials */}
-                                <div className={`border rounded-lg p-4 mb-4 ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-blue-50 border-blue-200'}`}>
-                                <h3 className={`font-bold mb-3 ${isDark ? 'text-blue-400' : 'text-blue-800'}`}>
-                                📝 API Credentials
-                                </h3>
-
-                                {integrationSettings?.apiKey ? (
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                            API Key
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={integrationSettings.apiKey}
-                                                readOnly
-                                                className={`flex-1 px-3 py-2 border rounded-lg font-mono text-sm ${isDark ? 'bg-gray-600 border-gray-500 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`}
-                                            />
-                                            <button
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(integrationSettings.apiKey);
-                                                    toast.success("API key copied!");
-                                                }}
-                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
-                                            >
-                                                Copy
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={generateNewAPIKey}
-                                        className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-                                    >
-                                        🔄 Regenerate API Key
-                                    </button>
-                                </div>
-                                ) : (
-                                <div className="text-center py-4">
-                                    <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
-                                        No API credentials yet
-                                    </p>
-                                    <button
-                                        onClick={generateNewAPIKey}
-                                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
-                                    >
-                                        🔑 Generate API Credentials
-                                    </button>
-                                </div>
-                                )}
-                                </div>
-
-                                {/* Recent Submissions */}
-                                {integrationSettings?.apiKey && (
-                                <div className={`border rounded-lg p-4 ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-purple-50 border-purple-200'}`}>
-                                <h3 className={`font-bold mb-3 ${isDark ? 'text-purple-400' : 'text-purple-800'}`}>
-                                    📥 Recent Form Submissions ({formSubmissions.length})
-                                </h3>
-
-                                {formSubmissions.length === 0 ? (
-                                    <p className={`text-sm text-center py-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        No submissions yet
-                                    </p>
-                                ) : (
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                        {formSubmissions.slice(0, 5).map((submission) => (
-                                            <div
-                                                key={submission.submissionId}
-                                                className={`p-3 rounded text-sm border ${isDark ? 'bg-gray-600 border-gray-500' : 'bg-white border-purple-200'}`}
-                                            >
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                                                        {submission.data?.email || "No email"}
-                                                    </span>
-                                                    <span className={`text-xs px-2 py-1 rounded ${
-                                                        submission.processed
-                                                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                                    }`}>
-                                                        {submission.processed ? "✓ Processed" : "Pending"}
-                                                    </span>
-                                                </div>
-                                                <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    {new Date(submission.submittedAt).toLocaleString()}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                </div>
-                                )}
-                                </div>
-                                </div>
-                                )}
-                                </div>
-                                );
-                                };
-
-                                export default Settings;
+export default Settings;

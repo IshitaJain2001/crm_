@@ -8,8 +8,7 @@ import { FiMail, FiLock, FiLogIn, FiStar } from 'react-icons/fi';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { FcGoogle } from 'react-icons/fc';
-
-const API_URL = process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com";
+import { API_URL } from '../config/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -233,9 +232,12 @@ const Login = () => {
 
           {/* Register Link */}
           <p className="text-center text-gray-600">
-            <Link to="/register" className="text-blue-600 hover:text-blue-700 font-semibold transition duration-200">
+            <Link to="/get-started" className="text-blue-600 hover:text-blue-700 font-semibold transition duration-200">
               Create a new account
             </Link>
+          </p>
+          <p className="text-center text-xs text-gray-500 mt-3 max-w-sm mx-auto leading-relaxed">
+            Team members without an invite should ask their Admin or HR for an invitation email — self-signup is only for company Admin or HR.
           </p>
         </div>
       </div>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://crm-1-5el5.onrender.com';
+import { setSessionAuth } from '../store/authSlice';
+import { API_URL } from '../config/api';
 
 // Google OAuth Button Component
 const GoogleLoginButton = ({ onClick, loading }) => {
@@ -26,6 +27,7 @@ const GoogleLoginButton = ({ onClick, loading }) => {
 const JoinViaInvitation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const token = searchParams.get('token');
 
   const [loading, setLoading] = useState(true);
@@ -72,17 +74,19 @@ const JoinViaInvitation = () => {
         googleId: googleUser.uid
       });
 
-      // Save authentication data
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      localStorage.setItem('company', JSON.stringify(response.data.company));
+      dispatch(
+        setSessionAuth({
+          token: response.data.token,
+          user: response.data.user,
+          company: response.data.company,
+        }),
+      );
 
       toast.success(response.data.message);
-      
-      // Redirect to dashboard
+
       setTimeout(() => {
-        window.location.href = '/';
-      }, 500);
+        navigate('/', { replace: true });
+      }, 400);
     } catch (error) {
       // Handle Firebase errors
       if (error.code === 'auth/popup-closed-by-user') {

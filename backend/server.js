@@ -15,7 +15,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'https://crm-1-5el5.onrender.com',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
 }));
 
@@ -27,22 +27,25 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Debug middleware to log incoming request bodies for website-builder
-app.use((req, res, next) => {
-  if (req.path.includes('register-company') || req.path.includes('website-builder')) {
-    if (req.body && req.body.sections) {
-      console.log("DEBUG: Request body sections:", {
-        type: typeof req.body.sections,
-        isArray: Array.isArray(req.body.sections),
-        length: Array.isArray(req.body.sections) ? req.body.sections.length : 'N/A',
-        firstElement: Array.isArray(req.body.sections) && req.body.sections.length > 0 
-          ? { type: typeof req.body.sections[0], value: JSON.stringify(req.body.sections[0]).substring(0, 100) }
-          : 'N/A'
-      });
+if (process.env.NODE_ENV !== "production") {
+  app.use((req, res, next) => {
+    if (
+      req.path.includes("register-company") ||
+      req.path.includes("website-builder")
+    ) {
+      if (req.body && req.body.sections) {
+        console.log("DEBUG: Request body sections:", {
+          type: typeof req.body.sections,
+          isArray: Array.isArray(req.body.sections),
+          length: Array.isArray(req.body.sections)
+            ? req.body.sections.length
+            : "N/A",
+        });
+      }
     }
-  }
-  next();
-});
+    next();
+  });
+}
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/crm', {
@@ -105,7 +108,11 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`\n🚀 CRM Backend running on port ${PORT}`);
   console.log(`📝 API: http://localhost:${PORT}/api`);
-  console.log(`💾 Database: ${process.env.MONGODB_URI}\n`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`💾 Database: ${process.env.MONGODB_URI ? "(configured)" : "not set"}\n`);
+  } else {
+    console.log("💾 Database: connected\n");
+  }
 });
 
 module.exports = app;

@@ -35,6 +35,7 @@ import SimpleChat from "./pages/SimpleChat";
 import Feedback from "./pages/Feedback";
 import Analytics from "./pages/Analytics";
 import WebsiteBuilder from "./pages/WebsiteBuilder";
+import IndustrySelection from "./pages/IndustrySelection";
 
 // Components
 import PrivateRoute from "./components/PrivateRoute";
@@ -43,6 +44,7 @@ import AdminRoute from "./components/AdminRoute";
 // Utils
 import { setupAxiosInterceptors } from "./utils/axiosInterceptor";
 import { checkAuth } from "./store/authSlice";
+import { API_URL } from "./config/api";
 
 function App() {
   const dispatch = useDispatch();
@@ -53,7 +55,7 @@ function App() {
     setupAxiosInterceptors();
   }, []);
 
-  // Check auth on mount and load from localStorage
+  // Restore session from sessionStorage (or migrate legacy localStorage on first load)
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
@@ -66,7 +68,7 @@ function App() {
       try {
         // Make a lightweight validation request
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL || "https://crm-1-5el5.onrender.com"}/api/auth/validate`,
+          `${API_URL}/api/auth/validate`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -97,7 +99,6 @@ function App() {
     return () => clearInterval(interval);
   }, [token, dispatch]);
 
-  // Check auth on mount and sync localStorage with Redux
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const loading = useSelector((state) => state.auth.loading);
 
@@ -121,10 +122,24 @@ function App() {
           element={!isAuthenticated ? <Login /> : <Navigate to="/" />}
         />
         <Route
+          path="/get-started"
+          element={
+            !isAuthenticated ? (
+              <IndustrySelection />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
           path="/register"
           element={
             !isAuthenticated ? <RegisterMultiTenant /> : <Navigate to="/" />
           }
+        />
+        <Route
+          path="/dashboard"
+          element={<Navigate to="/" replace />}
         />
         <Route
           path="/forgot-password"

@@ -24,7 +24,7 @@ const checkChatbotOwnership = async (req, res, next) => {
 };
 
 // CREATE - Create a new chatbot
-router.post('/', authMiddleware, requireRole('admin', 'superadmin'), async (req, res) => {
+router.post('/', authMiddleware, requireRole('admin', 'superadmin', 'hr'), async (req, res) => {
   try {
     const { name, description, widget } = req.body;
 
@@ -97,7 +97,7 @@ router.get('/:id', authMiddleware, checkChatbotOwnership, async (req, res) => {
 });
 
 // UPDATE - Update chatbot
-router.put('/:id', authMiddleware, requireRole('admin', 'superadmin'), checkChatbotOwnership, async (req, res) => {
+router.put('/:id', authMiddleware, requireRole('admin', 'superadmin', 'hr'), checkChatbotOwnership, async (req, res) => {
   try {
     const { name, description, status, widget, businessHours, escalationThreshold, welcomeMessage } = req.body;
 
@@ -136,7 +136,7 @@ router.delete('/:id', authMiddleware, adminOnly, checkChatbotOwnership, async (r
 });
 
 // TOGGLE STATUS - Activate/Deactivate chatbot
-router.patch('/:id/toggle-status', authMiddleware, requireRole('admin', 'superadmin'), checkChatbotOwnership, async (req, res) => {
+router.patch('/:id/toggle-status', authMiddleware, requireRole('admin', 'superadmin', 'hr'), checkChatbotOwnership, async (req, res) => {
   try {
     req.chatbot.status = req.chatbot.status === 'active' ? 'inactive' : 'active';
     req.chatbot.lastModifiedBy = req.user.id;
@@ -234,7 +234,7 @@ router.post('/:id/test-webhook', authMiddleware, checkChatbotOwnership, async (r
 });
 
 // ADD FAQ - Add question & answer
-router.post('/:id/faq', authMiddleware, requireRole('admin', 'superadmin'), checkChatbotOwnership, async (req, res) => {
+router.post('/:id/faq', authMiddleware, requireRole('admin', 'superadmin', 'hr'), checkChatbotOwnership, async (req, res) => {
   try {
     const { question, answer } = req.body;
 
@@ -267,7 +267,7 @@ router.get('/:id/faq', authMiddleware, checkChatbotOwnership, async (req, res) =
 });
 
 // DELETE FAQ - Delete specific Q&A
-router.delete('/:id/faq/:faqId', authMiddleware, requireRole('admin', 'superadmin'), checkChatbotOwnership, async (req, res) => {
+router.delete('/:id/faq/:faqId', authMiddleware, requireRole('admin', 'superadmin', 'hr'), checkChatbotOwnership, async (req, res) => {
   try {
     req.chatbot.faqs = req.chatbot.faqs.filter(faq => faq._id.toString() !== req.params.faqId);
     await req.chatbot.save();
@@ -282,7 +282,7 @@ router.delete('/:id/faq/:faqId', authMiddleware, requireRole('admin', 'superadmi
 });
 
 // UPDATE FAQ - Update specific Q&A
-router.put('/:id/faq/:faqId', authMiddleware, requireRole('admin', 'superadmin'), checkChatbotOwnership, async (req, res) => {
+router.put('/:id/faq/:faqId', authMiddleware, requireRole('admin', 'superadmin', 'hr'), checkChatbotOwnership, async (req, res) => {
   try {
     const { question, answer } = req.body;
 
